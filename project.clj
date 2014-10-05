@@ -7,4 +7,6 @@
                  [quil "2.2.2"]
                  [opencv/opencv "2.4.10"]
                  [opencv/opencv-native "2.4.10"]]
-  :profiles {:dev {:source-paths ["dev"]}})
+  :jvm-opts ["-Xmx2G" "-Xms2G"]
+  :profiles {:dev {:source-paths ["dev"]}}
+  :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)])
