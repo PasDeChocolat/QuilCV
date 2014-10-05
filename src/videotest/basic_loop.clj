@@ -1,4 +1,4 @@
-(ns videotest.core
+(ns videotest.basic-loop
   (:require
    [quil.core :as q]
    [quil.middleware :as m])
