@@ -5,7 +5,8 @@
   (:import
    [org.opencv.highgui Highgui VideoCapture]
    [org.opencv.core CvType Mat]
-   [java.nio ByteBuffer]))
+   [org.opencv.imgproc Imgproc]
+   [java.nio ByteBuffer ByteOrder]))
 
 (def WIDTH 640)
 (def HEIGHT 480)
@@ -35,7 +36,7 @@
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
 (defn setup []
-  (q/frame-rate 2)
+  (q/frame-rate 60)
   {:b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
@@ -49,11 +50,15 @@
             (update-in [:frame-mat] (partial grab-frame! camera) ))))
 
 (defn mat->p-img [mat b-array i-array p-img]
-  (.get mat 0 0 b-array)
-  (-> (ByteBuffer/wrap b-array)
-      (.asIntBuffer)
-      (.get i-array))
+  (let [n-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)]
+    (Imgproc/cvtColor mat n-mat Imgproc/COLOR_BGRA2RGBA 0)
+    (.get n-mat 0 0 b-array)
+    (-> (ByteBuffer/wrap b-array)
+       (.asIntBuffer)
+       (.get i-array)))
+  (.loadPixels p-img)
   (set! (.pixels p-img) (aclone i-array))
+  (.updatePixels p-img)
   p-img)
 
 (defn update-p-image [state]
@@ -67,6 +72,7 @@
 
 (defn draw [state]
   (let [{:keys [p-image]} state]
+    (q/background 0)
     (q/image p-image 0 0)))
 
 (defn on-close
@@ -75,7 +81,7 @@
      (when-not (nil? camera)
        (.release camera))))
 
-#_(q/defsketch videotest
+(q/defsketch videotest
   :title "Video Test"
   :size [WIDTH HEIGHT]
   :setup setup
