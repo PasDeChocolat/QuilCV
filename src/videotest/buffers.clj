@@ -40,6 +40,7 @@
   {:b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
+   :output-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
    :camera (camera 0)
    :p-image (q/create-image WIDTH HEIGHT :rgb)})
 
@@ -49,22 +50,21 @@
             (is-opened? camera)
             (update-in [:frame-mat] (partial grab-frame! camera) ))))
 
-(defn mat->p-img [mat b-array i-array p-img]
-  (let [n-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)]
-    (Imgproc/cvtColor mat n-mat Imgproc/COLOR_RGB2RGBA 4)
-    (.get n-mat 0 0 b-array)
-    (-> (ByteBuffer/wrap b-array)
-        (.order ByteOrder/LITTLE_ENDIAN)
-        (.asIntBuffer)
-        (.get i-array)))
+(defn mat->p-img [in-mat out-mat b-array i-array p-img]
+  (Imgproc/cvtColor in-mat out-mat Imgproc/COLOR_RGB2RGBA 4)
+  (.get out-mat 0 0 b-array)
+  (-> (ByteBuffer/wrap b-array)
+      (.order ByteOrder/LITTLE_ENDIAN)
+      (.asIntBuffer)
+      (.get i-array))
   (.loadPixels p-img)
   (set! (.pixels p-img) (aclone i-array))
   (.updatePixels p-img)
   p-img)
 
 (defn update-p-image [state]
-  (let [{:keys [frame-mat b-array i-array]} state]
-    (update-in state [:p-image] #(mat->p-img frame-mat b-array i-array %))))
+  (let [{:keys [frame-mat output-mat b-array i-array]} state]
+    (update-in state [:p-image] #(mat->p-img frame-mat output-mat b-array i-array %))))
 
 (defn update [state]
   (-> state
