@@ -39,9 +39,9 @@
   (q/frame-rate 60)
   {:b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
-   :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
+   :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
    :camera (camera 0)
-   :p-image (q/create-image WIDTH HEIGHT :argb)})
+   :p-image (q/create-image WIDTH HEIGHT :rgb)})
 
 (defn update-frame [state]
   (let [{:keys [camera]} state]
@@ -51,11 +51,12 @@
 
 (defn mat->p-img [mat b-array i-array p-img]
   (let [n-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)]
-    (Imgproc/cvtColor mat n-mat Imgproc/COLOR_BGRA2RGBA 0)
+    (Imgproc/cvtColor mat n-mat Imgproc/COLOR_RGB2RGBA 4)
     (.get n-mat 0 0 b-array)
     (-> (ByteBuffer/wrap b-array)
-       (.asIntBuffer)
-       (.get i-array)))
+        (.order ByteOrder/LITTLE_ENDIAN)
+        (.asIntBuffer)
+        (.get i-array)))
   (.loadPixels p-img)
   (set! (.pixels p-img) (aclone i-array))
   (.updatePixels p-img)
