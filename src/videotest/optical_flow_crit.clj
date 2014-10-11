@@ -4,13 +4,23 @@
    [quil.middleware :as m])
   (:import
    [org.opencv.highgui Highgui VideoCapture]
-   [org.opencv.core CvType Mat MatOfByte MatOfFloat MatOfPoint MatOfPoint2f]
+   [org.opencv.core CvType Mat MatOfByte MatOfFloat MatOfPoint MatOfPoint2f Size TermCriteria]
    [org.opencv.imgproc Imgproc]
    [org.opencv.video Video]
    [java.nio ByteBuffer ByteOrder]))
 
 (def WIDTH 640)
 (def HEIGHT 480)
+
+(def MAX-CORNERS 800)
+(def BLANK-MASK (Mat.))
+(def WIN-SIZE-W 10)
+(def WIN-SIZE (Size. WIN-SIZE-W WIN-SIZE-W))
+(def NEG-ONE-SIZE (Size. -1 -1))
+(def TERM-CRITERIA (TermCriteria. (+ TermCriteria/EPS TermCriteria/COUNT) 20 0.03))
+
+(def RESET-FRAMES 100)
+(def PT-D 10)
 
 ;; pixCnt1 is the number of bytes in the pixel buffer
 ;; pixCnt2 is the number of integers in the PImage pixels buffer
@@ -78,12 +88,17 @@
   gray-mat)
 
 (defn update-corners! [gray-mat corners]
-  (let [max-corners 100
-        quality-level 0.3
-        min-dist 7
+  (let [max-corners MAX-CORNERS
+        quality-level 0.01
+        min-dist 5.0
+        mask BLANK-MASK
+        block-size 3
+        use-harris-detector false
+        k 0.04
         pts (MatOfPoint.)]
-    (Imgproc/goodFeaturesToTrack gray-mat pts max-corners quality-level min-dist)
+    (Imgproc/goodFeaturesToTrack gray-mat pts max-corners quality-level min-dist mask block-size use-harris-detector k)
     (.convertTo pts corners CvType/CV_32FC2)
+    #_(Imgproc/cornerSubPix gray-mat corners WIN-SIZE NEG-ONE-SIZE TERM-CRITERIA)
     corners))
 
 (defn init-gray-mat [{:keys [frame-mat old-gray-mat] :as state}]
@@ -94,26 +109,28 @@
           (assoc-in [:old-corners] (update-corners! old-gray-mat (MatOfPoint2f.)))))
     (let [{:keys [old-gray-mat old-corners new-gray-mat new-corners]} state]
       (.copyTo new-gray-mat old-gray-mat)
-      (.copyTo new-corners old-corners)
-      (-> state
-          (assoc-in [:old-gray-mat] old-gray-mat)
-          (assoc-in [:old-corners] old-corners)))))
+      (if (= 0 (mod (q/frame-count) RESET-FRAMES))
+        (update-corners! old-gray-mat old-corners)
+        (.copyTo new-corners old-corners))
+      state))) 
 
 (defn update-optical-flow [state]
   (let [{:keys [frame-mat new-gray-mat new-corners old-gray-mat old-corners lk-status lk-err]} state]
     (BGR->GrayMat! frame-mat new-gray-mat)
     (update-corners! new-gray-mat new-corners)
-    (Video/calcOpticalFlowPyrLK old-gray-mat new-gray-mat old-corners new-corners lk-status lk-err)
+    (let [max-level 5
+          flags 0
+          min-eig-threshold 0.001]
+      (Video/calcOpticalFlowPyrLK old-gray-mat new-gray-mat old-corners new-corners lk-status lk-err
+                                  WIN-SIZE max-level TERM-CRITERIA flags min-eig-threshold))
     (-> state
-        (assoc-in [:new-gray-mat] new-gray-mat)
-        (assoc-in [:new-corners] new-corners)
         (assoc-in [:lk-status] lk-status)
         (assoc-in [:lk-err] lk-err))))
 
 (defn update [state]
   (-> state
       (update-frame)
-      (update-p-image)
+      #_(update-p-image)
       (init-gray-mat)
       (update-optical-flow)))
 
@@ -124,17 +141,17 @@
        (q/push-style)
        (q/no-stroke)
        (apply q/fill rgba)
-       (q/ellipse x y 20 20)
+       (q/ellipse x y PT-D PT-D)
        (q/pop-style)) )
   ([pt]
-     (draw-pt pt [0 255 0 150])))
+     (draw-pt pt [0 255 0 80])))
 
 (defn draw-flow [{:keys [new-corners old-corners lk-status] :as state}]
   (let [pts (.toList new-corners)
         old-pts (.toList old-corners)]
     (when (< 0 (count old-pts))
       (dorun
-       (map #(draw-pt % [0 0 255 120]) old-pts)))
+       (map #(draw-pt % [0 0 255 60]) old-pts)))
     (when (< 0 (count pts))
       (let [status (.toList lk-status)
             z (filter (fn [[_ s]] (= 1 s))
@@ -146,7 +163,7 @@
 (defn draw [state]
   (let [{:keys [p-image]} state]
     (q/background 0)
-    (q/image p-image 0 0)
+    #_(q/image p-image 0 0)
     (draw-flow state)))
 
 (defn on-close
