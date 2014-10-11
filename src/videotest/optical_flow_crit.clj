@@ -1,7 +1,8 @@
 (ns videotest.optical-flow-crit
   (:require
    [quil.core :as q]
-   [quil.middleware :as m])
+   [quil.middleware :as m]
+   [clojure.set :as cset])
   (:import
    [org.opencv.highgui Highgui VideoCapture]
    [org.opencv.core CvType Mat MatOfByte MatOfFloat MatOfPoint MatOfPoint2f Size TermCriteria]
@@ -12,14 +13,14 @@
 (def WIDTH 640)
 (def HEIGHT 480)
 
-(def MAX-CORNERS 800)
+(def MAX-CORNERS 300)
 (def BLANK-MASK (Mat.))
 (def WIN-SIZE-W 10)
 (def WIN-SIZE (Size. WIN-SIZE-W WIN-SIZE-W))
 (def NEG-ONE-SIZE (Size. -1 -1))
 (def TERM-CRITERIA (TermCriteria. (+ TermCriteria/EPS TermCriteria/COUNT) 20 0.03))
 
-(def RESET-FRAMES 100)
+(def RESET-FRAMES 4)
 (def PT-D 10)
 
 ;; pixCnt1 is the number of bytes in the pixel buffer
@@ -47,7 +48,7 @@
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
 (defn setup []
-  #_(q/frame-rate 60)
+  (q/frame-rate 60)
   {:b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
@@ -87,19 +88,37 @@
   (Imgproc/cvtColor m gray-mat Imgproc/COLOR_BGR2GRAY)
   gray-mat)
 
-(defn update-corners! [gray-mat corners]
-  (let [max-corners MAX-CORNERS
-        quality-level 0.01
-        min-dist 5.0
-        mask BLANK-MASK
-        block-size 3
-        use-harris-detector false
-        k 0.04
-        pts (MatOfPoint.)]
-    (Imgproc/goodFeaturesToTrack gray-mat pts max-corners quality-level min-dist mask block-size use-harris-detector k)
-    (.convertTo pts corners CvType/CV_32FC2)
-    #_(Imgproc/cornerSubPix gray-mat corners WIN-SIZE NEG-ONE-SIZE TERM-CRITERIA)
-    corners))
+(defn update-corners!
+  ([gray-mat]
+     (let [corners (MatOfPoint2f.)]
+       (update-corners! gray-mat corners)))
+  ([gray-mat corners]
+     (let [max-corners MAX-CORNERS
+           quality-level 0.01
+           min-dist 5.0
+           mask BLANK-MASK
+           block-size 3
+           use-harris-detector false
+           k 0.04
+           pts (MatOfPoint.)]
+       (Imgproc/goodFeaturesToTrack gray-mat pts max-corners quality-level min-dist mask block-size use-harris-detector k)
+       (.convertTo pts corners CvType/CV_32FC2)
+       #_(Imgproc/cornerSubPix gray-mat corners WIN-SIZE NEG-ONE-SIZE TERM-CRITERIA)
+       corners)))
+
+(defn valid-pts [pts pt-status]
+  (let [p-s (filter (fn [[_ s]] (= 1 s))
+                    (map vector pts pt-status))]
+    (doall
+     (map (fn [[p _]] p) p-s))))
+
+(defn refresh-corners! [gray-mat lk-status remaining-corners old-corners]
+  (let [valid-remaining (valid-pts (.toList remaining-corners)
+                                   (.toList lk-status))
+        new-corners (.toList (update-corners! gray-mat))
+        union (vec
+               (cset/union (set valid-remaining) (set new-corners)))]
+    (.fromList old-corners (take MAX-CORNERS union))))
 
 (defn init-gray-mat [{:keys [frame-mat old-gray-mat] :as state}]
   (if (nil? old-gray-mat)
@@ -107,11 +126,17 @@
       (-> state
           (assoc-in [:old-gray-mat] old-gray-mat)
           (assoc-in [:old-corners] (update-corners! old-gray-mat (MatOfPoint2f.)))))
-    (let [{:keys [old-gray-mat old-corners new-gray-mat new-corners]} state]
+    (let [{:keys [old-gray-mat old-corners new-gray-mat new-corners lk-status]} state]
       (.copyTo new-gray-mat old-gray-mat)
       (if (= 0 (mod (q/frame-count) RESET-FRAMES))
-        (update-corners! old-gray-mat old-corners)
-        (.copyTo new-corners old-corners))
+        (do
+          ;; Reuse existing valid corners (still detected):
+          (refresh-corners! new-gray-mat lk-status new-corners old-corners)
+
+          ;; Brute-Force reset of corners:
+          #_(update-corners! new-gray-mat old-corners))
+        (do
+          (.copyTo new-corners old-corners)))
       state))) 
 
 (defn update-optical-flow [state]
@@ -153,12 +178,9 @@
       (dorun
        (map #(draw-pt % [0 0 255 60]) old-pts)))
     (when (< 0 (count pts))
-      (let [status (.toList lk-status)
-            z (filter (fn [[_ s]] (= 1 s))
-                      (map vector pts status))]
+      (let [v-pts (valid-pts pts (.toList lk-status))]
         (dorun
-         (map (fn [[p _]] (draw-pt p))
-              z))))))
+         (map draw-pt v-pts))))))
 
 (defn draw [state]
   (let [{:keys [p-image]} state]
@@ -176,7 +198,6 @@
   :title "Video Test"
   :size [WIDTH HEIGHT]
   :setup setup
-  ;; something for on-close??? (.release camera)
   :update update
   :draw draw
   :on-close on-close
