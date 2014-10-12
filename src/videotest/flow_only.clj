@@ -10,7 +10,7 @@
    [org.opencv.video Video]
    [java.nio ByteBuffer ByteOrder]))
 
-(def MAX-CORNERS 800)
+(def MAX-CORNERS 1200)
 (def BLANK-MASK (Mat.))
 (def WIN-SIZE-W 10)
 (def WIN-SIZE (Size. WIN-SIZE-W WIN-SIZE-W))
@@ -20,6 +20,7 @@
 (def RESET-FRAMES 4)
 (def PT-D 10)
 
+(def FLOW-MAX 50)
 
 ;; OpenCV Implementation Wrapper - Will move to separate NS.
 (defn camera [dev]
@@ -112,7 +113,7 @@
            pts (MatOfPoint.)]
        (Imgproc/goodFeaturesToTrack gray-mat pts max-corners quality-level min-dist mask block-size use-harris-detector k)
        (.convertTo pts corners CvType/CV_32FC2)
-       #_(Imgproc/cornerSubPix gray-mat corners WIN-SIZE NEG-ONE-SIZE TERM-CRITERIA)
+       (Imgproc/cornerSubPix gray-mat corners WIN-SIZE NEG-ONE-SIZE TERM-CRITERIA)
        corners)))
 
 (defn valid-pts [pts pt-status]
@@ -193,19 +194,41 @@
         (dorun
          (map draw-pt v-pts))))))
 
+(defn draw-line [old-pt new-pt]
+  (q/line (.x old-pt) (.y old-pt)
+          (.x new-pt) (.y new-pt)))
+
+(defn small-flow [[old-pt new-pt]]
+  (let [old-x (.x old-pt)
+        old-y (.y old-pt)
+        new-x (.x new-pt)
+        new-y (.y new-pt)
+        d-x (- new-x old-x)
+        d-y (- new-y old-y)
+        d-sq (+ (* d-x d-x) (* d-y d-y))
+        lim-sq (* FLOW-MAX FLOW-MAX)]
+    (>= lim-sq d-sq)))
+
 (defn draw-flow
   "Draw optical flow as lines."
   [{:keys [new-corners old-corners lk-status]}]
-  (let [pts (.toList new-corners)
+  (let [status (when lk-status
+                 (.toList lk-status))
+        pts (when new-corners
+              (valid-pts (.toList new-corners) status))
         old-pts (when old-corners
-                  (.toList old-corners))]
-    (when (< 0 (count old-pts))
-      (dorun
-       (map #(draw-pt % [0 0 255 60]) old-pts)))
+                  (valid-pts (.toList old-corners) status))]
     (when (< 0 (count pts))
-      (let [v-pts (valid-pts pts (.toList lk-status))]
+      (let [valid-pts (filter small-flow
+                              (map vector old-pts pts))]
+        (q/push-matrix)
+        (q/stroke 255)
+        (q/stroke-weight 0.5)
         (dorun
-         (map draw-pt v-pts))))))
+         (map (fn [[o n]]
+                (draw-line o n))
+              valid-pts))
+        (q/pop-matrix)))))
 
 (defn draw [state]
   (let [{:keys [p-image]} state]
