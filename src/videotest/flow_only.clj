@@ -180,9 +180,25 @@
   ([pt]
      (draw-pt pt [0 255 0 80])))
 
-(defn draw-flow [{:keys [new-corners old-corners lk-status] :as state}]
+(defn draw-flow-dots
+  "Draw optical flow as dots."
+  [{:keys [new-corners old-corners lk-status] :as state}]
   (let [pts (.toList new-corners)
         old-pts (.toList old-corners)]
+    (when (< 0 (count old-pts))
+      (dorun
+       (map #(draw-pt % [0 0 255 60]) old-pts)))
+    (when (< 0 (count pts))
+      (let [v-pts (valid-pts pts (.toList lk-status))]
+        (dorun
+         (map draw-pt v-pts))))))
+
+(defn draw-flow
+  "Draw optical flow as lines."
+  [{:keys [new-corners old-corners lk-status]}]
+  (let [pts (.toList new-corners)
+        old-pts (when old-corners
+                  (.toList old-corners))]
     (when (< 0 (count old-pts))
       (dorun
        (map #(draw-pt % [0 0 255 60]) old-pts)))
