@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [quil "2.2.2"]
                  [opencv/opencv "2.4.10"]
-                 [opencv/opencv-native "2.4.10"]]
+                 [opencv/opencv-native "2.4.10"]
+                 [net.mikera/vectorz-clj "0.26.1"]]
   :jvm-opts ["-Xmx2G" "-Xms2G"]
   :profiles {:dev {:source-paths ["dev"]}}
   :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)])

@@ -17,7 +17,6 @@
 (def TERM-CRITERIA (TermCriteria. (+ TermCriteria/EPS TermCriteria/COUNT) 20 0.03))
 
 (def RESET-FRAMES 4)
-(def PT-D 10)
 
 
 ;; OpenCV Implementation Wrapper - Will move to separate NS.
@@ -25,7 +24,8 @@
   (VideoCapture. dev))
 
 (defn is-opened? [cam]
-  (.isOpened cam))
+  (and (not (nil? cam))
+       (.isOpened cam)))
 
 (defn grab-frame!
   "Updates a CV Mat with image from camera."
