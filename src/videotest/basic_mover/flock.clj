@@ -29,7 +29,7 @@
 
 (defn init-vehicles [width height n]
   (vec
-   (take n (repeatedly #(random-vehicle width height)))))
+   (take n (repeatedly #(random-vehicle {:width width :height height})))))
 
 (defn flock [all vehicle]
   (let [sep-factor   1.5
