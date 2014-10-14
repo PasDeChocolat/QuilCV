@@ -2,7 +2,7 @@
   (:require
    [quil.core :as q]
    [videotest.basic-mover.behavior :as beh]
-   [videotest.basic-mover.fast-vector :as fvec]))
+   [videotest.basic-mover.native-vector :as fvec]))
 
 (def VEHICLE-R 1.0)
 

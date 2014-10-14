@@ -7,6 +7,7 @@
                  [quil "2.2.2"]
                  [opencv/opencv "2.4.10"]
                  [opencv/opencv-native "2.4.10"]
+                 [org.clojure/math.numeric-tower "0.0.4"]
                  [net.mikera/vectorz-clj "0.26.1"]]
   :jvm-opts ["-Xmx2G" "-Xms2G"]
   :profiles {:dev {:source-paths ["dev"]}}

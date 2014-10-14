@@ -4,7 +4,7 @@
 ;;
 (ns videotest.basic-mover.behavior
   (:require
-   [videotest.basic-mover.fast-vector :as fvec]))
+   [videotest.basic-mover.native-vector :as fvec]))
 
 (defn dist-vehicle [loc vehicles]
   (mapv (fn [v]
