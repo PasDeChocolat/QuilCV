@@ -49,13 +49,16 @@
         (beh/apply-force align-force)
         (beh/apply-force glom-force))))
 
-(defn update-vehicles [width height vehicles]
+(defn flock-move [width height vehicles]
   (doall
-   (map #(->> %
+   (mapv #(->> %
               (flock vehicles)
               (beh/move-vehicle)
               (beh/borders width height VEHICLE-R))
         vehicles)))
+
+(defn update-vehicles [width height state]
+  (update-in state [:vehicles] (partial flock-move width height)))
 
 (defn draw-vehicle
   [{:keys [location velocity]}]

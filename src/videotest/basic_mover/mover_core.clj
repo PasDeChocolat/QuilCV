@@ -19,7 +19,7 @@
 
 (def FLOW-MAX 50)
 
-(def NUM-VEHICLES 50)
+(def NUM-VEHICLES 1)
 
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
@@ -40,13 +40,13 @@
    :p-image (q/create-image WIDTH HEIGHT :rgb)})
 
 (defn update [state]
-  (-> state
-      (cv/update-frame)
-      #_(cv/update-p-image)
-      (cv/init-gray-mat)
-      (cv/update-optical-flow)
-      (update-in [:vehicles] (partial flock/update-vehicles WIDTH HEIGHT))
-      ))
+  (let [upd-vehicles (partial flock/update-vehicles WIDTH HEIGHT)]
+   (-> state
+       (cv/update-frame)
+       #_(cv/update-p-image)
+       (cv/init-gray-mat)
+       (cv/update-optical-flow)
+       (upd-vehicles))))
 
 (defn draw-line [old-pt new-pt]
   (q/line (.x old-pt) (.y old-pt)

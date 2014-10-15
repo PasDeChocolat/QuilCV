@@ -7,8 +7,15 @@
                  [quil "2.2.2"]
                  [opencv/opencv "2.4.10"]
                  [opencv/opencv-native "2.4.10"]
+
+                 ;; required by native-vector
                  [org.clojure/math.numeric-tower "0.0.4"]
-                 [net.mikera/vectorz-clj "0.26.1"]]
+
+                 ;; required by fast-vector
+                 ;; [net.mikera/vectorz-clj "0.26.1"]
+
+                 [org.toxiclibs/toxiclibs-clj "0.2.0-SNAPSHOT"]
+                 ]
   :jvm-opts ["-Xmx2G" "-Xms2G"]
   :profiles {:dev {:source-paths ["dev"]}}
   :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)])
