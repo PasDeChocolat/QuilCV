@@ -19,7 +19,7 @@
 
 (def FLOW-MAX 50)
 
-(def NUM-VEHICLES 100)
+(def NUM-VEHICLES 200)
 
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.

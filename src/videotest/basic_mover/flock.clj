@@ -70,8 +70,8 @@
                              v))]
     (doall
      (mapv #(->> %
-                 #_(flock-near)
-                 (flock vehicles)
+                 (flock-near)
+                 #_(flock vehicles)
                  (beh/move-vehicle)
                  (beh/borders width height VEHICLE-R))
            vehicles))))
