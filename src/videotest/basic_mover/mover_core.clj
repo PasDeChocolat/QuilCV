@@ -17,8 +17,6 @@
 (def PIX-CNT1 (* WIDTH HEIGHT 4))
 (def PIX-CNT2 (* WIDTH HEIGHT))
 
-(def FLOW-MAX 50)
-
 (def NUM-VEHICLES 200)
 
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
@@ -27,6 +25,7 @@
   (q/frame-rate 60)
   {:vehicles (flock/init-vehicles WIDTH HEIGHT NUM-VEHICLES)
    :vehicle-locations {}
+   :gestures {}
    :b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
@@ -37,6 +36,7 @@
    :new-corners (MatOfPoint2f.)
    :lk-status (MatOfByte.)
    :lk-err (MatOfFloat.)
+   :flow-pts []
    :camera (cv/camera 0)
    :p-image (q/create-image WIDTH HEIGHT :rgb)})
 
@@ -50,38 +50,18 @@
   (q/line (.x old-pt) (.y old-pt)
           (.x new-pt) (.y new-pt)))
 
-(defn small-flow [[old-pt new-pt]]
-  (let [old-x (.x old-pt)
-        old-y (.y old-pt)
-        new-x (.x new-pt)
-        new-y (.y new-pt)
-        d-x (- new-x old-x)
-        d-y (- new-y old-y)
-        d-sq (+ (* d-x d-x) (* d-y d-y))
-        lim-sq (* FLOW-MAX FLOW-MAX)]
-    (>= lim-sq d-sq)))
-
 (defn draw-flow
   "Draw optical flow as lines."
-  [{:keys [new-corners old-corners lk-status]}]
-  (let [status (if (cv/mat-empty? lk-status)
-                 []
-                 (.toList lk-status))
-        pts (when new-corners
-              (cv/valid-pts (.toList new-corners) status))
-        old-pts (when old-corners
-                  (cv/valid-pts (.toList old-corners) status))]
-    (when (< 0 (count pts))
-      (let [valid-pts (filter small-flow
-                              (map vector old-pts pts))]
-        (q/push-matrix)
-        (q/stroke 255)
-        (q/stroke-weight 0.5)
-        (dorun
-         (map (fn [[o n]]
-                (draw-line o n))
-              valid-pts))
-        (q/pop-matrix)))))
+  [{:keys [flow-pts]}]
+  (when (seq flow-pts)
+    (q/push-matrix)
+    (q/stroke 255)
+    (q/stroke-weight 0.5)
+    (dorun
+     (map (fn [[o n]]
+            (draw-line o n))
+          flow-pts))
+    (q/pop-matrix)))
 
 (defn draw [state]
   (let [{:keys [p-image vehicles]} state]

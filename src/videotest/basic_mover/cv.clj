@@ -17,7 +17,7 @@
 (def TERM-CRITERIA (TermCriteria. (+ TermCriteria/EPS TermCriteria/COUNT) 20 0.03))
 
 (def RESET-FRAMES 4)
-
+(def FLOW-MAX 50)
 
 ;; OpenCV Implementation Wrapper - Will move to separate NS.
 (defn camera [dev]
@@ -139,9 +139,40 @@
         (assoc-in [:lk-status] lk-status)
         (assoc-in [:lk-err] lk-err))))
 
+(defn small-flow [[old-pt new-pt]]
+  "Filter predicate for flow-pts, only selecting flow points
+   less than FLOW-MAX away from each other."
+  (let [old-x (.x old-pt)
+        old-y (.y old-pt)
+        new-x (.x new-pt)
+        new-y (.y new-pt)
+        d-x (- new-x old-x)
+        d-y (- new-y old-y)
+        d-sq (+ (* d-x d-x) (* d-y d-y))
+        lim-sq (* FLOW-MAX FLOW-MAX)]
+    (>= lim-sq d-sq)))
+
+(defn record-flow
+  "Records flow points [old-pt new-pt]."
+  [{:keys [new-corners old-corners lk-status] :as state}]
+  (let [status (if (mat-empty? lk-status)
+                 []
+                 (.toList lk-status))
+        pts (if new-corners
+              (valid-pts (.toList new-corners) status)
+              [])
+        old-pts (if old-corners
+                  (valid-pts (.toList old-corners) status)
+                  [])
+        flow-pts (filter small-flow
+                         (map vector old-pts pts))]
+    (-> state
+        (assoc-in [:flow-pts] flow-pts))))
+
 (defn update-image-detection [state]
   (-> state
       (update-frame)
       #_(update-p-image)
       (init-gray-mat)
-      (update-optical-flow)))
+      (update-optical-flow)
+      (record-flow)))
