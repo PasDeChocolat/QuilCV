@@ -138,3 +138,10 @@
     (-> state
         (assoc-in [:lk-status] lk-status)
         (assoc-in [:lk-err] lk-err))))
+
+(defn update-image-detection [state]
+  (-> state
+      (update-frame)
+      #_(update-p-image)
+      (init-gray-mat)
+      (update-optical-flow)))

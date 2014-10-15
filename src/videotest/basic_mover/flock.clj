@@ -49,16 +49,54 @@
         (beh/apply-force align-force)
         (beh/apply-force glom-force))))
 
-(defn flock-move [width height vehicles]
-  (doall
-   (mapv #(->> %
-              (flock vehicles)
-              (beh/move-vehicle)
-              (beh/borders width height VEHICLE-R))
-        vehicles)))
+(defn vehicles-near [vehicle-locations vehicle]
+  (let [[x y] (fvec/x-y (:location vehicle))
+        col (int (/ x BIN-SIZE))
+        row (int (/ y BIN-SIZE))
+        bins (for [i (range -1 2)
+                   j (range -1 2)
+                   :let [bin-col (+ col i)
+                         bin-row (+ row j)]]
+               [bin-col bin-row])]
+    (vec
+     (doall
+      (reduce (fn [memo bin]
+                (concat memo (get vehicle-locations bin [])))
+              [] bins)))))
+
+(defn flock-move [width height vehicle-locations vehicles]
+  (let [flock-near #(fn [v]
+                      (flock (vehicles-near vehicle-locations v)
+                             v))]
+    (doall
+     (mapv #(->> %
+                 #_(flock-near)
+                 (flock vehicles)
+                 (beh/move-vehicle)
+                 (beh/borders width height VEHICLE-R))
+           vehicles))))
+
+(def BIN-SIZE 20)
+
+(defn veh-loc->bin [location]
+  (let [[x y] (fvec/x-y location)]
+    [(int (/ x BIN-SIZE))
+     (int (/ y BIN-SIZE))]))
+
+(defn record-flock [{:keys [vehicles] :as state}]
+  (let [new-locs (doall
+                  (reduce (fn [memo v]
+                            (let [bin (veh-loc->bin (:location v))]
+                              (update-in memo [bin] #(conj (or % []) v))))
+                          {} vehicles))]
+    (-> state
+        (assoc-in [:vehicle-locations] new-locs))))
 
 (defn update-vehicles [width height state]
-  (update-in state [:vehicles] (partial flock-move width height)))
+  (let [{:keys [vehicle-locations]} state]
+    (-> state
+        (update-in [:vehicles] (partial flock-move width height vehicle-locations))
+        (record-flock))))
 
 (defn draw-vehicle
   [{:keys [location velocity]}]
