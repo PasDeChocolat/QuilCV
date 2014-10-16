@@ -3,7 +3,8 @@
    [quil.core :as q]
    [quil.middleware :as m]
    [videotest.basic-mover.cv :as cv]
-   [videotest.basic-mover.flock :as flock])
+   [videotest.basic-mover.flock :as flock]
+   [videotest.basic-mover.gesture :as gesture])
   (:import
    [org.opencv.core CvType Mat MatOfByte MatOfFloat MatOfPoint MatOfPoint2f]))
 
@@ -17,7 +18,8 @@
 (def PIX-CNT1 (* WIDTH HEIGHT 4))
 (def PIX-CNT2 (* WIDTH HEIGHT))
 
-(def NUM-VEHICLES 200)
+(def NUM-VEHICLES 100)
+
 
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
@@ -44,6 +46,7 @@
   (let [upd-vehicles (partial flock/update-vehicles WIDTH HEIGHT)]
     (-> state
         (cv/update-image-detection)
+        (gesture/record-gestures)
         (upd-vehicles))))
 
 (defn draw-line [old-pt new-pt]

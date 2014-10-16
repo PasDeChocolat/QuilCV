@@ -1,7 +1,8 @@
 (ns videotest.basic-mover.cv
   (:require
    [quil.core :as q]
-   [clojure.set :as cset])
+   [clojure.set :as cset]
+   [clojure.math.numeric-tower :as math])
   (:import
    [org.opencv.highgui Highgui VideoCapture]
    [org.opencv.core CvType Mat MatOfPoint MatOfPoint2f Size TermCriteria]
@@ -18,6 +19,7 @@
 
 (def RESET-FRAMES 4)
 (def FLOW-MAX 50)
+(def FLOW-MIN 10)
 
 ;; OpenCV Implementation Wrapper - Will move to separate NS.
 (defn camera [dev]
@@ -139,6 +141,9 @@
         (assoc-in [:lk-status] lk-status)
         (assoc-in [:lk-err] lk-err))))
 
+(defn- sqr [n]
+  (math/expt n 2))
+
 (defn small-flow [[old-pt new-pt]]
   "Filter predicate for flow-pts, only selecting flow points
    less than FLOW-MAX away from each other."
@@ -149,10 +154,24 @@
         d-x (- new-x old-x)
         d-y (- new-y old-y)
         d-sq (+ (* d-x d-x) (* d-y d-y))
-        lim-sq (* FLOW-MAX FLOW-MAX)]
+        lim-sq (sqr FLOW-MAX)]
     (>= lim-sq d-sq)))
 
-(defn record-flow
+(defn trim-flow [[old-pt new-pt]]
+  "Filter predicate for flow-pts, only selecting flow points
+   less than FLOW-MAX away from each other."
+  (let [old-x (.x old-pt)
+        old-y (.y old-pt)
+        new-x (.x new-pt)
+        new-y (.y new-pt)
+        d-x (- new-x old-x)
+        d-y (- new-y old-y)
+        d-sq (+ (* d-x d-x) (* d-y d-y))
+        max-sq (sqr FLOW-MAX)
+        min-sq (sqr FLOW-MIN)]
+    (and (<= min-sq d-sq) (>= max-sq d-sq))))
+
+(defn record-flow-pts
   "Records flow points [old-pt new-pt]."
   [{:keys [new-corners old-corners lk-status] :as state}]
   (let [status (if (mat-empty? lk-status)
@@ -164,7 +183,9 @@
         old-pts (if old-corners
                   (valid-pts (.toList old-corners) status)
                   [])
-        flow-pts (filter small-flow
+        flow-filter trim-flow
+        ; flow-filter small-flow
+        flow-pts (filter flow-filter
                          (map vector old-pts pts))]
     (-> state
         (assoc-in [:flow-pts] flow-pts))))
@@ -175,4 +196,4 @@
       #_(update-p-image)
       (init-gray-mat)
       (update-optical-flow)
-      (record-flow)))
+      (record-flow-pts)))

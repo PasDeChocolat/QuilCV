@@ -2,6 +2,8 @@
   (:require
    [quil.core :as q]
    [videotest.basic-mover.behavior :as beh]
+   [videotest.basic-mover.bin-lattice :as binl]
+   [videotest.basic-mover.gesture :as gesture]
    [videotest.basic-mover.native-vector :as fvec]))
 
 (def VEHICLE-R 1.0)
@@ -9,6 +11,11 @@
 (def SEPARATION-DIST 30)
 (def NEIGHBOR-DIST 100)
 (def GLOM-DIST 50)
+
+(def SEP-FACTOR   1.5)
+(def ALIGN-FACTOR 1.0)
+(def GLOM-FACTOR  1.0)
+(def GESTURE-FACTOR 2.0)
 
 (defn random-v-comp []
   (let [r (+ 20.0 (rand 40.0))]
@@ -31,43 +38,32 @@
   (vec
    (take n (repeatedly #(random-vehicle {:width width :height height})))))
 
-(defn flock [all vehicle]
-  (let [sep-factor   1.5
-        align-factor 1.0
-        glom-factor  1.0
-        sep-force (fvec/*
+(defn flock [gestures all vehicle]
+  (let [sep-force (fvec/*
                    (beh/separate SEPARATION-DIST all vehicle)
-                   sep-factor)
+                   SEP-FACTOR)
         align-force (fvec/*
                      (beh/align NEIGHBOR-DIST all vehicle)
-                     align-factor)
+                     ALIGN-FACTOR)
+        gesture-align-force (fvec/*
+                             (gesture/align-from-gestures gestures vehicle)
+                             GESTURE-FACTOR)
         glom-force (fvec/*
                     (beh/glom GLOM-DIST all vehicle)
-                    glom-factor)]
+                    GLOM-FACTOR)]
     (-> vehicle
         (beh/apply-force sep-force)
         (beh/apply-force align-force)
         (beh/apply-force glom-force))))
 
 (defn vehicles-near [vehicle-locations vehicle]
-  (let [[x y] (fvec/x-y (:location vehicle))
-        col (int (/ x BIN-SIZE))
-        row (int (/ y BIN-SIZE))
-        bins (for [i (range -1 2)
-                   j (range -1 2)
-                   :let [bin-col (+ col i)
-                         bin-row (+ row j)]]
-               [bin-col bin-row])]
-    (vec
-     (doall
-      (reduce (fn [memo bin]
-                (concat memo (get vehicle-locations bin [])))
-              [] bins)))))
+  (binl/bin-things-near VEH-BIN-SIZE vehicle-locations (:location vehicle)))
 
-(defn flock-move [width height vehicle-locations vehicles]
-  (let [flock-near #(fn [v]
-                      (flock (vehicles-near vehicle-locations v)
-                             v))]
+(defn flock-move [width height gestures vehicle-locations vehicles]
+  (let [flock-near (fn [v]
+                     (flock gestures
+                            (vehicles-near vehicle-locations v)
+                            v))]
     (doall
      (mapv #(->> %
                  (flock-near)
@@ -76,12 +72,8 @@
                  (beh/borders width height VEHICLE-R))
            vehicles))))
 
-(def BIN-SIZE 20)
-
 (defn veh-loc->bin [location]
-  (let [[x y] (fvec/x-y location)]
-    [(int (/ x BIN-SIZE))
-     (int (/ y BIN-SIZE))]))
+  (binl/loc->bin location VEH-BIN-SIZE))
 
 (defn record-flock [{:keys [vehicles] :as state}]
   (let [new-locs (doall
@@ -93,9 +85,9 @@
         (assoc-in [:vehicle-locations] new-locs))))
 
 (defn update-vehicles [width height state]
-  (let [{:keys [vehicle-locations]} state]
+  (let [{:keys [gestures vehicle-locations]} state]
     (-> state
-        (update-in [:vehicles] (partial flock-move width height vehicle-locations))
+        (update-in [:vehicles] (partial flock-move width height gestures vehicle-locations))
         (record-flock))))
 
 (defn draw-vehicle

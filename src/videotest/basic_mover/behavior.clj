@@ -19,28 +19,34 @@
   (and (> d 0.0)
        (< d upper-d)))
 
+(defn align-vec
+  "General alignment with things with a velocity. Assumes that
+   inputs are already filtered (for distance)."
+  [max-force max-speed others thing]
+  (if (seq others)
+    (let [sum-vec (doall
+                   (reduce (fn [avg-v v]
+                             (fvec/+ avg-v v))
+                           (fvec/fvec 0 0) others))]
+      (-> sum-vec
+          (fvec// (count others))
+          (fvec/normalize)
+          (fvec/* max-speed)
+          (fvec/- thing)
+          (fvec/limit max-force)))
+    (fvec/fvec 0 0)))
+
 (defn align
   "Returns the alignment force for nearby vehicles, an average
   velocity of sorts. This force must be applied."
   [neighbor-dist all vehicle]
   (let [{:keys [location max-force max-speed velocity]} vehicle
-        dist-veh (doall
-                  (->> all
-                       (dist-vehicle location)
-                       (filter (fn [[d _]] (between-0 neighbor-dist d)))))
-        num-vehicles (count dist-veh)]
-    (if (< 0 num-vehicles)
-      (let [sum-dir (doall
-                     (reduce (fn [avg-dir [d v]]
-                               (fvec/+ avg-dir (:velocity v)))
-                             (fvec/fvec 0 0) dist-veh))]
-        (-> sum-dir
-            (fvec// num-vehicles)
-            (fvec/normalize)
-            (fvec/* max-speed)
-            (fvec/- velocity)
-            (fvec/limit max-force)))
-      (fvec/fvec 0.0 0.0))))
+        all-vel (doall
+                 (->> all
+                      (dist-vehicle location)
+                      (filter (fn [[d _]] (between-0 neighbor-dist d)))
+                      (map (fn [[_ v]] (:velocity v)))))]
+    (align-vec max-force max-speed all-vel velocity)))
 
 (defn glom
   "Returns the cohesive force, which must be applied."
