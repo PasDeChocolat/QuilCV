@@ -13,9 +13,8 @@
 
                  ;; required by fast-vector
                  ;; [net.mikera/vectorz-clj "0.26.1"]
-
-                 [org.toxiclibs/toxiclibs-clj "0.2.0-SNAPSHOT"]
                  ]
+  :java-source-paths ["src/java"]
   :jvm-opts ["-Xmx2G" "-Xms2G"]
   :profiles {:dev {:source-paths ["dev"]}}
   :injections [(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)])
