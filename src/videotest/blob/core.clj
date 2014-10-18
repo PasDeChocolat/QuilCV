@@ -4,7 +4,7 @@
    [quil.middleware :as m]
    [videotest.basic-mover.cv :as cv])
   (:import
-   [org.opencv.core CvType Mat MatOfByte MatOfFloat MatOfPoint MatOfPoint2f]))
+   [org.opencv.core CvType Mat]))
 
 
 (def CAM-SIZE (cv/camera-frame-size))
@@ -31,9 +31,7 @@
 (defn update [state]
   (-> state
       (cv/update-frame)
-      (cv/update-p-image)
-      #_(cv/init-gray-mat)
-      #_(cv/update-optical-flow)))
+      (cv/update-p-image)))
 
 (defn draw [state]
   (let [{:keys [p-image]} state]
@@ -42,7 +40,6 @@
     (q/translate WIDTH 0)
     (q/scale -1 1)
     (q/image p-image 0 0)
-    #_(draw-flow state)
     (q/pop-matrix)))
 
 (defn on-close
