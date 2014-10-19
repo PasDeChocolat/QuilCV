@@ -60,7 +60,7 @@
                 (cv/gray-mat->otsu-gaussian-bw gray-mat bw-mat
                                                (:output-mat state)
                                                {:threshold-type Imgproc/THRESH_BINARY_INV
-                                                :blur-k-size (Size. 61 61)})))
+                                                :blur-k-size (Size. 51 51)})))
     state))
 
 (defn update-gray-p-image
@@ -81,7 +81,7 @@
       (cv/update-frame)
       (update-gray-mat)
       (update-gray-p-image)
-      (update-blobs)))
+      #_(update-blobs)))
 
 (defn draw-centroid [detector n]
   (q/ellipse (.getCentroidX detector n)
