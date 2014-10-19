@@ -75,13 +75,19 @@
       (update-gray-p-image)
       (update-blobs)))
 
+(defn draw-centroid [detector n]
+  (q/ellipse (.getCentroidX detector n)
+             (.getCentroidY detector n)
+             40 40))
+
 (defn draw-centroids [{:keys [detector]}]
   (q/push-style)
-  (q/stroke-weight 5)
-  (q/stroke 0 255 0)
+  (q/no-stroke)
+  (q/fill 0 255 0 80)
   (if (< 0 (.getBlobsNumber detector))
-   (q/point (.getCentroidX detector 0)
-            (.getCentroidY detector 0)))
+    (dorun
+     (map #(draw-centroid detector %)
+          (range 0 (.getBlobsNumber detector)))))
   (q/pop-style))
 
 (defn draw [state]
