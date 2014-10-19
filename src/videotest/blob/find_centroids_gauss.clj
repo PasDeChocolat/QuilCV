@@ -4,7 +4,7 @@
    [quil.middleware :as m]
    [videotest.blob.cv :as cv])
   (:import
-   [org.opencv.core CvType Mat]
+   [org.opencv.core CvType Mat Size]
    [org.opencv.imgproc Imgproc]
    [java.nio ByteBuffer ByteOrder]
    [blobscanner Detector]))
@@ -43,25 +43,29 @@
                (Thread/sleep 1000)
                (Detector. @this 255))})
 
-(defn gray-mat->bw-mat [gray-mat bw-mat]
-  (Imgproc/threshold gray-mat bw-mat BW-THRESH 255 Imgproc/THRESH_BINARY)
-  bw-mat)
-
-(defn gray-mat->inv-bw-mat [gray-mat bw-mat]
-  (Imgproc/threshold gray-mat bw-mat BW-THRESH 255 Imgproc/THRESH_BINARY_INV)
-  bw-mat)
-
 (defn update-gray-mat
   [{:keys [frame-mat gray-mat bw-mat] :as state}]
   (if frame-mat
     (let [gray-mat (cv/BGR->GrayMat! frame-mat gray-mat)]
-      #_(assoc-in state [:gray-mat] (gray-mat->bw-mat gray-mat bw-mat))
-      (assoc-in state [:gray-mat] (gray-mat->inv-bw-mat gray-mat bw-mat)))
+      #_(assoc-in state [:gray-mat] (cv/gray-mat->bw-mat gray-mat bw-mat
+                                                         {:bw-threshold BW-THRESH}))
+      #_(assoc-in state [:gray-mat] (cv/gray-mat->inv-bw-mat gray-mat bw-mat
+                                                             {:bw-threshold BW-THRESH}))
+      #_(assoc-in state [:gray-mat]
+                (cv/gray-mat->adaptive-gaussian-bw gray-mat bw-mat
+                                               {:threshold-type Imgproc/THRESH_BINARY_INV
+                                                :block-size 5
+                                                :c 2}))
+      (assoc-in state [:gray-mat]
+                (cv/gray-mat->otsu-gaussian-bw gray-mat bw-mat
+                                               (:output-mat state)
+                                               {:threshold-type Imgproc/THRESH_BINARY_INV
+                                                :blur-k-size (Size. 61 61)})))
     state))
 
 (defn update-gray-p-image
-  [{:keys [frame-mat gray-mat output-mat b-array i-array] :as state}]
-  (if frame-mat
+  [{:keys [gray-mat output-mat b-array i-array] :as state}]
+  (if gray-mat
     (update-in state [:p-image] #(cv/gray-mat->p-img gray-mat output-mat b-array i-array %))
     state))
 

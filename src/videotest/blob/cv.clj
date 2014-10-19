@@ -57,6 +57,8 @@
             (is-opened? camera)
             (update-in [:frame-mat] (partial grab-frame! camera) ))))
 
+
+;; Processing PImage conversion
 (defn any-mat->p-img
   "See Imgproc/cvtColor for list of cvt-color-codes."
   [in-mat out-mat cvt-color-code b-array i-array p-img]
@@ -81,10 +83,99 @@
   (let [{:keys [frame-mat output-mat b-array i-array]} state]
     (update-in state [:p-image] #(mat->p-img frame-mat output-mat b-array i-array %))))
 
+
+;; Camera frame to gray
 (defn BGR->GrayMat! [m gray-mat]
   (Imgproc/cvtColor m gray-mat Imgproc/COLOR_BGR2GRAY)
   gray-mat)
 
+
+;; Filtering
+(defn gray-mat->bw-mat
+  ([gray-mat bw-mat]
+     (gray-mat->bw-mat gray-mat bw-mat {}))
+  ([gray-mat bw-mat {:keys [bw-threshold] :or {bw-threshold 126}}]
+     (Imgproc/threshold gray-mat bw-mat bw-threshold 255 Imgproc/THRESH_BINARY)
+     bw-mat))
+
+(defn gray-mat->inv-bw-mat
+  ([gray-mat bw-mat]
+     (gray-mat->inv-bw-mat gray-mat bw-mat {}))
+  ([gray-mat bw-mat {:keys [bw-threshold] :or {bw-threshold 126}}]
+     (Imgproc/threshold gray-mat bw-mat bw-threshold 255 Imgproc/THRESH_BINARY_INV)
+     bw-mat))
+
+(defn median-blur
+  [src-mat dst-mat k-size]
+  (Imgproc/medianBlur src-mat dst-mat k-size)
+  dst-mat)
+
+(defn gray-mat->adaptive-mean-bw
+  "I can't even believe how slow this is. Use at own risk."
+  ([gray-mat bw-mat]
+     (gray-mat->adaptive-mean-bw gray-mat bw-mat {}))
+  ([gray-mat bw-mat {:keys [threshold-type block-size c blur-k-size]
+                     :or {threshold-type Imgproc/THRESH_BINARY
+                          block-size 11
+                          c 2
+                          blur-k-size 5}}]
+     (let [src-mat (median-blur gray-mat bw-mat blur-k-size)]
+      (Imgproc/adaptiveThreshold src-mat bw-mat
+                                 255
+                                 Imgproc/ADAPTIVE_THRESH_MEAN_C
+                                 threshold-type
+                                 block-size c))
+     bw-mat))
+
+(defn gray-mat->adaptive-mean-inv-bw
+  "I can't even believe how slow this is. Use at own risk."
+  ([gray-mat bw-mat]
+     (gray-mat->adaptive-mean-inv-bw gray-mat bw-mat {}))
+  ([gray-mat bw-mat {:keys [threshold-type blur-k-size]
+                     :or {threshold-type Imgproc/THRESH_BINARY_INV
+                          blur-k-size 5}
+                     :as opts}]
+     (let [opts (assoc-in opts [:threshold-type] threshold-type)
+           src-mat (median-blur gray-mat bw-mat blur-k-size)]
+       (gray-mat->adaptive-mean-inv-bw src-mat bw-mat opts))))
+
+(defn gray-mat->adaptive-gaussian-bw
+  "I can't even believe how slow this is. Use at own risk."
+  ([gray-mat bw-mat]
+     (gray-mat->adaptive-gaussian-bw gray-mat bw-mat {}))
+  ([gray-mat bw-mat {:keys [threshold-type block-size c]
+                     :or {threshold-type Imgproc/THRESH_BINARY
+                          block-size 11
+                          c 2}}]
+     (Imgproc/adaptiveThreshold gray-mat bw-mat
+                                255
+                                Imgproc/ADAPTIVE_THRESH_GAUSSIAN_C
+                                threshold-type
+                                block-size c)
+     bw-mat))
+
+(defn gaussian-blur
+  ([src-mat dst-mat]
+     (gaussian-blur src-mat dst-mat {}))
+  ([src-mat dst-mat {:keys [k-size sigma-x]
+                     :or {k-size (Size. 5 5)
+                          sigma-x 0}}]
+     (Imgproc/GaussianBlur src-mat dst-mat k-size sigma-x)
+     dst-mat))
+
+(defn gray-mat->otsu-gaussian-bw
+  ([gray-mat bw-mat gauss-mat]
+     (gray-mat->otsu-gaussian-bw gray-mat bw-mat gauss-mat {}))
+  ([gray-mat bw-mat gauss-mat {:keys [threshold-type blur-k-size]
+                               :or {threshold-type Imgproc/THRESH_BINARY
+                                    blur-k-size (Size. 5 5)}}]
+     (let [src-mat (gaussian-blur gray-mat gauss-mat {:k-size blur-k-size})]
+       (Imgproc/threshold src-mat bw-mat 0 255 (+ threshold-type
+                                                  Imgproc/THRESH_OTSU))
+       bw-mat)))
+
+
+;; Feature detection (for optical flow)
 (defn update-corners!
   ([gray-mat]
      (let [corners (MatOfPoint2f.)]
