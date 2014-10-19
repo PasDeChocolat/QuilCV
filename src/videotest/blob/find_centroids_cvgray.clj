@@ -2,7 +2,7 @@
   (:require
    [quil.core :as q]
    [quil.middleware :as m]
-   [videotest.basic-mover.cv :as cv])
+   [videotest.blob.cv :as cv])
   (:import
    [org.opencv.core CvType Mat]
    [org.opencv.imgproc Imgproc]
@@ -28,47 +28,39 @@
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
 (defn setup []
+  (reset! this videotest)
   (q/frame-rate 60)
   {:b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
    :output-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
    :gray-mat (Mat.)
+   :bw-mat (Mat.)
    :camera (cv/camera 0)
    :p-image (q/create-image WIDTH HEIGHT :rgb)
-   :detector (Detector. @this 255)
-   })
+   :detector (Detector. @this 255)})
 
-(defn p-image->bw [p-image]
-  (q/image-filter p-image :threshold)
-  p-image)
+(defn gray-mat->bw-mat [gray-mat bw-mat]
+  (Imgproc/threshold gray-mat bw-mat 128 255 Imgproc/THRESH_BINARY)
+  bw-mat)
 
+(defn update-gray-mat
+  [{:keys [frame-mat gray-mat bw-mat] :as state}]
+  (if frame-mat
+    (let [gray-mat (cv/BGR->GrayMat! frame-mat gray-mat)]
+      (assoc-in state [:gray-mat] (gray-mat->bw-mat gray-mat bw-mat)))
+    state))
 
-(defn update-gray-mat [state]
-  (let [{:keys [frame-mat gray-mat]} state]
-    (assoc-in state [:gray-mat] (cv/BGR->GrayMat! frame-mat gray-mat))))
-
-(defn gray-mat->p-img [in-mat out-mat b-array i-array p-img]
-  (Imgproc/cvtColor in-mat out-mat Imgproc/COLOR_GRAY2RGBA 4)
-  (.get out-mat 0 0 b-array)
-  (-> (ByteBuffer/wrap b-array)
-      (.order ByteOrder/LITTLE_ENDIAN)
-      (.asIntBuffer)
-      (.get i-array))
-  (.loadPixels p-img)
-  (set! (.pixels p-img) (aclone i-array))
-  (.updatePixels p-img)
-  p-img)
-
-
-(defn update-gray-p-image [state]
-  (let [{:keys [frame-mat gray-mat output-mat b-array i-array]} state
-        orig-frame-mat frame-mat
-        wrapped-state (-> state
-                          (assoc-in [:frame-mat] gray-mat))]
-    (-> wrapped-state
-        (update-in [:p-image] #(gray-mat->p-img gray-mat output-mat b-array i-array %))
-        (assoc-in [:frame-mat] orig-frame-mat))))
+(defn update-gray-p-image
+  [{:keys [frame-mat gray-mat output-mat b-array i-array] :as state}]
+  (if frame-mat
+    (let [orig-frame-mat frame-mat
+          wrapped-state (-> state
+                            (assoc-in [:frame-mat] gray-mat))]
+      (-> wrapped-state
+          (update-in [:p-image] #(cv/gray-mat->p-img gray-mat output-mat b-array i-array %))
+          (assoc-in [:frame-mat] orig-frame-mat)))
+    state))
 
 (defn update-blobs [{:keys [detector p-image] :as state}]
   (.imageFindBlobs detector p-image)
@@ -80,10 +72,8 @@
   (-> state
       (cv/update-frame)
       (update-gray-mat)
-      #_(cv/update-p-image)
       (update-gray-p-image)
-      #_(update-in [:p-image] p-image->bw)
-      #_(update-blobs)))
+      (update-blobs)))
 
 (defn draw-centroids [{:keys [detector]}]
   (q/push-style)
@@ -100,8 +90,9 @@
     (q/push-matrix)
     (q/translate WIDTH 0)
     (q/scale -1 1)
-    (q/image p-image 0 0)
-    #_(draw-centroids state)
+    (when p-image
+      (q/image p-image 0 0)
+      (draw-centroids state))
     (q/pop-matrix)))
 
 (defn on-close
@@ -119,4 +110,3 @@
   :on-close on-close
   :middleware [m/fun-mode])
 
-(reset! this videotest)

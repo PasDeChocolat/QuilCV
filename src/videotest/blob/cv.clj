@@ -1,4 +1,4 @@
-(ns videotest.basic-mover.cv
+(ns videotest.blob.cv
   (:require
    [quil.core :as q]
    [clojure.set :as cset]
@@ -57,8 +57,10 @@
             (is-opened? camera)
             (update-in [:frame-mat] (partial grab-frame! camera) ))))
 
-(defn mat->p-img [in-mat out-mat b-array i-array p-img]
-  (Imgproc/cvtColor in-mat out-mat Imgproc/COLOR_RGB2RGBA 4)
+(defn any-mat->p-img
+  "See Imgproc/cvtColor for list of cvt-color-codes."
+  [in-mat out-mat cvt-color-code b-array i-array p-img]
+  (Imgproc/cvtColor in-mat out-mat cvt-color-code 4)
   (.get out-mat 0 0 b-array)
   (-> (ByteBuffer/wrap b-array)
       (.order ByteOrder/LITTLE_ENDIAN)
@@ -68,6 +70,12 @@
   (set! (.pixels p-img) (aclone i-array))
   (.updatePixels p-img)
   p-img)
+
+(defn gray-mat->p-img [in-mat out-mat b-array i-array p-img]
+  (any-mat->p-img in-mat out-mat Imgproc/COLOR_GRAY2RGBA b-array i-array p-img))
+
+(defn mat->p-img [in-mat out-mat b-array i-array p-img]
+  (any-mat->p-img in-mat out-mat Imgproc/COLOR_RGB2RGBA b-array i-array p-img))
 
 (defn update-p-image [state]
   (let [{:keys [frame-mat output-mat b-array i-array]} state]
