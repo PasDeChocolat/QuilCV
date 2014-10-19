@@ -17,6 +17,9 @@
 (def GLOM-FACTOR  1.0)
 (def GESTURE-FACTOR 2.0)
 
+(def VEH-BIN-SIZE 20)
+
+
 (defn random-v-comp []
   (let [r (+ 20.0 (rand 40.0))]
     (if (> (rand 1.0) 0.5)
@@ -54,6 +57,7 @@
     (-> vehicle
         (beh/apply-force sep-force)
         (beh/apply-force align-force)
+        (beh/apply-force gesture-align-force)
         (beh/apply-force glom-force))))
 
 (defn vehicles-near [vehicle-locations vehicle]

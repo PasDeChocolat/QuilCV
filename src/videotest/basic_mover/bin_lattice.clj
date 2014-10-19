@@ -2,8 +2,6 @@
   (:require
    [videotest.basic-mover.native-vector :as fvec]))
 
-(def VEH-BIN-SIZE 20)
-
 (defn bin-things-near [bin-size bin-tree loc]
   (let [[x y] (fvec/x-y loc)
         col (int (/ x bin-size))
