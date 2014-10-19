@@ -23,12 +23,12 @@
 (def PIX-CNT1 (* WIDTH HEIGHT 4))
 (def PIX-CNT2 (* WIDTH HEIGHT))
 
+(def BW-THRESH 200) ; between 0-255 (gray -> BW cut-off)
 (def this (atom nil))
 
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
 (defn setup []
-  (reset! this videotest)
   (q/frame-rate 60)
   {:b-array (byte-array PIX-CNT1)
    :i-array (int-array PIX-CNT2)
@@ -38,10 +38,13 @@
    :bw-mat (Mat.)
    :camera (cv/camera 0)
    :p-image (q/create-image WIDTH HEIGHT :rgb)
-   :detector (Detector. @this 255)})
+   :detector (do
+               ; Applet must exist before Detector can be created
+               (Thread/sleep 1000)
+               (Detector. @this 255))})
 
 (defn gray-mat->bw-mat [gray-mat bw-mat]
-  (Imgproc/threshold gray-mat bw-mat 128 255 Imgproc/THRESH_BINARY)
+  (Imgproc/threshold gray-mat bw-mat BW-THRESH 255 Imgproc/THRESH_BINARY)
   bw-mat)
 
 (defn update-gray-mat
@@ -54,18 +57,14 @@
 (defn update-gray-p-image
   [{:keys [frame-mat gray-mat output-mat b-array i-array] :as state}]
   (if frame-mat
-    (let [orig-frame-mat frame-mat
-          wrapped-state (-> state
-                            (assoc-in [:frame-mat] gray-mat))]
-      (-> wrapped-state
-          (update-in [:p-image] #(cv/gray-mat->p-img gray-mat output-mat b-array i-array %))
-          (assoc-in [:frame-mat] orig-frame-mat)))
+    (update-in state [:p-image] #(cv/gray-mat->p-img gray-mat output-mat b-array i-array %))
     state))
 
 (defn update-blobs [{:keys [detector p-image] :as state}]
-  (.imageFindBlobs detector p-image)
-  (.loadBlobsFeatures detector)
-  (.findCentroids detector)
+  (when p-image
+    (.imageFindBlobs detector p-image)
+    (.loadBlobsFeatures detector)
+    (.findCentroids detector))
   state)
 
 (defn update [state]
@@ -81,14 +80,15 @@
              40 40))
 
 (defn draw-centroids [{:keys [detector]}]
-  (q/push-style)
-  (q/no-stroke)
-  (q/fill 0 255 0 80)
-  (if (< 0 (.getBlobsNumber detector))
+  (when (and detector
+             (< 0 (.getBlobsNumber detector)))
+    (q/push-style)
+    (q/no-stroke)
+    (q/fill 0 255 0 80)
     (dorun
      (map #(draw-centroid detector %)
-          (range 0 (.getBlobsNumber detector)))))
-  (q/pop-style))
+          (range 0 (.getBlobsNumber detector))))
+    (q/pop-style)))
 
 (defn draw [state]
   (let [{:keys [p-image]} state]
@@ -116,3 +116,4 @@
   :on-close on-close
   :middleware [m/fun-mode])
 
+(reset! this videotest)
