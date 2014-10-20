@@ -2,6 +2,7 @@
   (:require
    [quil.core :as q]
    [quil.middleware :as m]
+   [clj-yaml.core :as yaml]
    [videotest.cv-blob.cv :as cv])
   (:import
    [org.opencv.core CvType Mat MatOfKeyPoint Point Size]

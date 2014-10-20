@@ -11,6 +11,8 @@
                  ;; required by native-vector
                  [org.clojure/math.numeric-tower "0.0.4"]
 
+                 ;; YAML for SimpleBlobDetector properties
+                 [clj-yaml "0.4.0"]
                  ;; required by fast-vector
                  ;; [net.mikera/vectorz-clj "0.26.1"]
                  ]
