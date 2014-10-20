@@ -22,20 +22,23 @@
 
 (def BW-THRESH 50) ; between 0-255 (gray -> BW cut-off)
 
+
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
 ;; iArray is the temporary integer array buffer for PImage pixels.
 (defn setup []
   (q/frame-rate 60)
-  {:b-array (byte-array PIX-CNT1)
-   :i-array (int-array PIX-CNT2)
-   :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
-   :output-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
-   :gray-mat (Mat.)
-   :bw-mat (Mat.)
-   :camera (cv/camera 0)
-   :p-image (q/create-image WIDTH HEIGHT :rgb)
-   :detector (FeatureDetector/create FeatureDetector/SIMPLEBLOB)
-   :blob-points (MatOfKeyPoint.)})
+  (let [detector (FeatureDetector/create FeatureDetector/SIMPLEBLOB)]
+    (.read detector "detector.txt")
+   {:b-array (byte-array PIX-CNT1)
+    :i-array (int-array PIX-CNT2)
+    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
+    :output-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
+    :gray-mat (Mat.)
+    :bw-mat (Mat.)
+    :camera (cv/camera 0)
+    :p-image (q/create-image WIDTH HEIGHT :rgb)
+    :detector detector
+    :blob-points (MatOfKeyPoint.)}))
 
 (defn update-gray-mat
   [{:keys [frame-mat gray-mat bw-mat] :as state}]
