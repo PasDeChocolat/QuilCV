@@ -4,15 +4,11 @@
    [quil.middleware :as m]
    [videotest.cv-blob.cv :as cv])
   (:import
-   [org.opencv.core CvType Mat Size]
-   [org.opencv.features2d FeatureDetector]
+   [org.opencv.core CvType Mat MatOfKeyPoint Point Size]
+   [org.opencv.features2d FeatureDetector KeyPoint]
    [org.opencv.imgproc Imgproc]
    [java.nio ByteBuffer ByteOrder]))
 
-;; Based on Blobscanner example sketch by Antonio Molinaro:
-;; https://github.com/robdanet/blobscanner/blob/master/examples/blob_centroid/findCentroids/findCentroids.pde
-;;
-;; 
 
 (def CAM-SIZE (cv/camera-frame-size))
 (def WIDTH  (int (:width  CAM-SIZE)))
@@ -37,10 +33,8 @@
    :bw-mat (Mat.)
    :camera (cv/camera 0)
    :p-image (q/create-image WIDTH HEIGHT :rgb)
-   :detector (do
-               ; Applet must exist before Detector can be created
-               #_(Thread/sleep 1000)
-               (FeatureDetector/create FeatureDetector/SIMPLEBLOB))})
+   :detector (FeatureDetector/create FeatureDetector/SIMPLEBLOB)
+   :blob-points (MatOfKeyPoint.)})
 
 (defn update-gray-mat
   [{:keys [frame-mat gray-mat bw-mat] :as state}]
@@ -58,8 +52,8 @@
       (assoc-in state [:gray-mat]
                 (cv/gray-mat->otsu-gaussian-bw gray-mat bw-mat
                                                (:output-mat state)
-                                               {:threshold-type Imgproc/THRESH_BINARY_INV
-                                                :blur-k-size (Size. 51 51)})))
+                                               {:threshold-type Imgproc/THRESH_BINARY
+                                                :blur-k-size (Size. 41 41)})))
     state))
 
 (defn update-gray-p-image
@@ -68,11 +62,9 @@
     (update-in state [:p-image] #(cv/gray-mat->p-img gray-mat output-mat b-array i-array %))
     state))
 
-(defn update-blobs [{:keys [detector p-image] :as state}]
-  (when p-image
-    (.imageFindBlobs detector p-image)
-    (.loadBlobsFeatures detector)
-    (.findCentroids detector))
+(defn update-blobs [{:keys [detector gray-mat blob-points] :as state}]
+  (when gray-mat
+    (.detect detector gray-mat blob-points))
   state)
 
 (defn update [state]
@@ -80,23 +72,23 @@
       (cv/update-frame)
       (update-gray-mat)
       (update-gray-p-image)
-      #_(update-blobs)))
+      (update-blobs)))
 
-(defn draw-centroid [detector n]
-  (q/ellipse (.getCentroidX detector n)
-             (.getCentroidY detector n)
+(defn draw-centroid [pt]
+  (q/ellipse (.x pt)
+             (.y pt)
              40 40))
 
-(defn draw-centroids [{:keys [detector]}]
-  (when (and detector
-             (< 0 (.getBlobsNumber detector)))
-    (q/push-style)
-    (q/no-stroke)
-    (q/fill 0 255 0 80)
-    (dorun
-     (map #(draw-centroid detector %)
-          (range 0 (.getBlobsNumber detector))))
-    (q/pop-style)))
+(defn draw-centroids [{:keys [blob-points]}]
+  (let [blob-list (.toList blob-points)]
+    (when (< 0 (count blob-list))
+     (q/push-style)
+     (q/no-stroke)
+     (q/fill 0 255 0 80)
+     (dorun
+      (map #(draw-centroid (.pt %))
+           blob-list))
+     (q/pop-style))))
 
 (defn draw [state]
   (let [{:keys [p-image]} state]
@@ -106,7 +98,7 @@
     (q/scale -1 1)
     (when p-image
       (q/image p-image 0 0)
-      #_(draw-centroids state))
+      (draw-centroids state))
     (q/pop-matrix)))
 
 (defn on-close
