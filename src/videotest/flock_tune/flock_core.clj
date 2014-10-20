@@ -18,7 +18,7 @@
 (def PIX-CNT1 (* WIDTH HEIGHT 4))
 (def PIX-CNT2 (* WIDTH HEIGHT))
 
-(def NUM-VEHICLES 100)
+(def NUM-VEHICLES 500)
 
 
 ;; bArray is the temporary byte array buffer for OpenCV cv::Mat.
@@ -45,7 +45,7 @@
 (defn update [state]
   (let [upd-vehicles (partial flock/update-vehicles WIDTH HEIGHT)]
     (-> state
-        (cv/update-image-detection)
+        #_(cv/update-image-detection)
         #_(gesture/record-gestures)
         (upd-vehicles))))
 
