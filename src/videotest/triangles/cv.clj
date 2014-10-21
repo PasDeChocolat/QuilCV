@@ -89,6 +89,10 @@
   (Imgproc/cvtColor m gray-mat Imgproc/COLOR_BGR2GRAY)
   gray-mat)
 
+(defn BGR->RGBA! [m rgba-mat]
+  (Imgproc/cvtColor m rgba-mat Imgproc/COLOR_BGR2RGBA)
+  rgba-mat)
+
 
 ;; Filtering
 (defn gray-mat->bw-mat
