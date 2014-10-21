@@ -95,11 +95,12 @@
            blob-list))
      (q/pop-style))))
 
-(def MOSAIC-BIN-SIZE 12)
+(def MOSAIC-BIN-SIZE 16)
 (def MOSAIC-BIN-SIZE-X2 (* MOSAIC-BIN-SIZE 2.0))
 (def MOSAIC-BIN-SIZE-2 (/ MOSAIC-BIN-SIZE 2.0))
 (def NUM-COL-BINS (/ WIDTH  MOSAIC-BIN-SIZE))
 (def NUM-ROW-BINS (/ HEIGHT MOSAIC-BIN-SIZE))
+
 (def PI_2   (/ Math/PI 2.0))
 (def PI_3_2 (* 1.5 Math/PI))
 (def ORIENTATIONS [0 PI_2 Math/PI PI_3_2])
@@ -117,12 +118,22 @@
                    0                  MOSAIC-BIN-SIZE-X2
                    MOSAIC-BIN-SIZE-X2 MOSAIC-BIN-SIZE-X2)))))
 
+(defn gray-threshold [gray-mat mat-col mat-row]
+  (let [g (.get gray-mat mat-row mat-col)
+        g (if (< 0 (count g))
+            (first g)
+            0)]
+    (if (< 126 g)
+      g
+      0)))
+
 (defn draw-mosaic-pair [gray-mat [pt1 pt2]]
   (let [gray-fn (fn [mat-col mat-row]
                   (let [g (.get gray-mat mat-row mat-col)]
                     (if (< 0 (count g))
                       (first g)
                       0)))
+        ;gray-fn (partial gray-threshold gray-mat)
         [mat-col1 mat-row1] pt1
         [mat-col2 mat-row2] pt2
         g1 (gray-fn mat-col1 mat-row1)
@@ -144,7 +155,8 @@
                          :let [mat-col (+ (* col-bin MOSAIC-BIN-SIZE)
                                           MOSAIC-BIN-SIZE-2)
                                mat-row (+ (* row-bin MOSAIC-BIN-SIZE)
-                                          MOSAIC-BIN-SIZE-2)]]
+                                          MOSAIC-BIN-SIZE-2)]
+                         :when (= 0 (mod col-bin 2))]
                      [mat-col mat-row]))))
   (q/pop-style)
   (q/pop-matrix))
