@@ -45,7 +45,10 @@
 (def PI_3_2 (* 1.5 Math/PI))
 (def ORIENTATIONS [0 PI_2 Math/PI PI_3_2])
 
-(defn update-triangles [state]
+(defn update-triangles
+  "Saves origin points for each triangle, which is a vector pair of
+   x and y positions in the image material [col row]."
+  [state]
   (let [pts (for [col-bin (range 0 NUM-COL-BINS)
                   row-bin (range 0 NUM-ROW-BINS)
                   :let [mat-col (+ (* col-bin MOSAIC-BIN-SIZE)
@@ -57,6 +60,7 @@
     (assoc-in state [:triangle-points] pts)))
 
 (defn update-triangle-orientations
+  "Radian orientations associated to triangle origin points."
   [{:keys [triangle-points triangle-orientations] :as state}]
   (if (< (q/frame-count) 10)
     (let [orients (reduce (fn [memo [pt1 pt2]]
