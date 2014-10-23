@@ -34,10 +34,8 @@
   []
   (for [col-bin (range 0 NUM-COL-BINS)
         row-bin (range 0 NUM-ROW-BINS)
-        :let [mat-col (+ (* col-bin MOSAIC-BIN-SIZE)
-                         MOSAIC-BIN-SIZE-2)
-              mat-row (+ (* row-bin MOSAIC-BIN-SIZE)
-                         MOSAIC-BIN-SIZE-2)]
+        :let [mat-col (* col-bin MOSAIC-BIN-SIZE)
+              mat-row (* row-bin MOSAIC-BIN-SIZE)]
         :when (= 0 (mod col-bin 2))]
     [mat-col mat-row]))
 
@@ -133,7 +131,9 @@
 (defn draw-mosaic-pair
   [triangle-glyphs frame-mat rgba-mat [pt1 pt2]]
   (let [color-fn (fn [mat-col mat-row]
-                   (let [c (.get rgba-mat mat-row mat-col)]
+                   (let [c (.get rgba-mat
+                                 (+ mat-row MOSAIC-BIN-SIZE-2)
+                                 (+ mat-col MOSAIC-BIN-SIZE-2))]
                      (if (< 0 (count c))
                        (vec c)
                        [0 0 0])))
