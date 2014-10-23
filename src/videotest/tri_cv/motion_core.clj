@@ -20,6 +20,8 @@
 (def PIX-CNT1 (* WIDTH HEIGHT 4))
 (def PIX-CNT2 (* WIDTH HEIGHT))
 
+(def ALPHA-STILL 125.0)
+
 
 (def MOSAIC-BIN-SIZE 12)
 (def MOSAIC-BIN-SIZE-X2  (* MOSAIC-BIN-SIZE 2.0))
@@ -102,10 +104,11 @@
         tri-glyphs (triangle-glyphs tri-pts tri-orients)]
    {:b-array (byte-array PIX-CNT1)
     :i-array (int-array PIX-CNT2)
-    :frame-mat (Mat. WIDTH HEIGHT CvType/CV_8UC3)
-    :output-mat (Mat. WIDTH HEIGHT CvType/CV_8UC4)
+    :frame-mat (Mat. HEIGHT WIDTH CvType/CV_8UC3)
+    :output-mat (Mat. HEIGHT WIDTH CvType/CV_8UC4)
     :gray-mat (Mat.)
     :rgba-mat (Mat.)
+    :drawn-mat (Mat. HEIGHT WIDTH CvType/CV_8UC4)
     :camera (cv/camera 0)
     :p-image (q/create-image WIDTH HEIGHT :rgb)
     :triangle-points tri-pts
@@ -119,17 +122,15 @@
                          color
                          glyph-pts]
   (let [poly (MatOfPoint.)
-        c (apply #(let [r %1
-                        g %2
-                        b %3
-                        a %4]
-                    (Scalar. b g r))
+        c (apply (fn [r g b _]
+                   (let [a ALPHA-STILL]
+                     (Scalar. r g b a)))
                  color)]
     (.fromList poly (ArrayList. glyph-pts))
     (Core/fillPoly img-mat (ArrayList. [poly]) c)))
 
 (defn draw-mosaic-pair
-  [triangle-glyphs frame-mat rgba-mat [pt1 pt2]]
+  [triangle-glyphs drawn-mat rgba-mat [pt1 pt2]]
   (let [color-fn (fn [mat-col mat-row]
                    (let [c (.get rgba-mat
                                  (+ mat-row MOSAIC-BIN-SIZE-2)
@@ -141,17 +142,28 @@
         [mat-col2 mat-row2] pt2
         c1 (color-fn mat-col1 mat-row1)
         c2 (color-fn mat-col2 mat-row2)]
-    (draw-mosaic-glyph frame-mat c1 (triangle-glyphs pt1))
-    (draw-mosaic-glyph frame-mat c2 (triangle-glyphs pt2))))
+    (draw-mosaic-glyph drawn-mat c1 (triangle-glyphs pt1))
+    (draw-mosaic-glyph drawn-mat c2 (triangle-glyphs pt2))))
 
 (defn overlay-triangles
-  [{:keys [frame-mat rgba-mat triangle-points triangle-glyphs] :as state}]
+  [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs] :as state}]
   (dorun
    (map (partial draw-mosaic-pair
                  triangle-glyphs
-                 frame-mat rgba-mat)
+                 drawn-mat
+                 rgba-mat)
         (partition 2 triangle-points)))
   state)
+
+(defn rgba-mat->p-img
+  "Input mat is really BGR, but we'll flip these bits in
+   any-mat->p-img. If you don't use that, swap blue and red."
+  [in-mat out-mat b-array i-array p-img]
+  (cv/any-mat->p-img in-mat out-mat Imgproc/COLOR_RGBA2BGRA b-array i-array p-img))
+
+(defn update-drawn-p-image [state]
+  (let [{:keys [drawn-mat output-mat b-array i-array]} state]
+    (update-in state [:p-image] #(cv/mat->p-img drawn-mat output-mat b-array i-array %))))
 
 (defn update [state]
   (-> state
@@ -159,7 +171,7 @@
       
       (update-rgba)
       (overlay-triangles)
-      (cv/update-p-image)))
+      (update-drawn-p-image)))
 
 (defn draw [state]
   (let [{:keys [p-image frame-mat]} state]
