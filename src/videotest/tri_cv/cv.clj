@@ -1,4 +1,4 @@
-(ns videotest.triangles.cv
+(ns videotest.tri-cv.cv
   (:require
    [quil.core :as q]
    [clojure.set :as cset]

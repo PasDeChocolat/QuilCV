@@ -1,8 +1,8 @@
-(ns videotest.triangles.static-rotation-core
+(ns videotest.tri-cv.motion-core
   (:require
    [quil.core :as q]
    [quil.middleware :as m]
-   [videotest.triangles.cv :as cv])
+   [videotest.tri-cv.cv :as cv])
   (:import
    [org.opencv.core Core CvType Mat MatOfKeyPoint MatOfPoint Point Scalar Size]
    [org.opencv.features2d FeatureDetector KeyPoint]
