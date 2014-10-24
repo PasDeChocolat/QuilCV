@@ -11,7 +11,7 @@
    [java.nio ByteBuffer ByteOrder]
    [java.util ArrayList]))
 
-(def CAM-DEV-NUM 0)
+(def CAM-DEV-NUM 1)
 (def CAM-SIZE (cv/camera-frame-size CAM-DEV-NUM))
 (def CAM-WIDTH  (int (:width  CAM-SIZE)))
 (def CAM-HEIGHT (int (:height CAM-SIZE)))
@@ -213,4 +213,4 @@
   :on-close on-close
   :middleware [m/fun-mode])
 
-;; (.setResizable (.frame videotest) true)
+  (.setResizable (.frame videotest) true)
