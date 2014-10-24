@@ -1,5 +1,6 @@
 (ns videotest.tri-cv.motion-core
   (:require
+   [quil.applet :as qa :only [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
    [videotest.tri-cv.cv :as cv])
