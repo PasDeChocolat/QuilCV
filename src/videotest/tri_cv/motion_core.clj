@@ -11,7 +11,8 @@
    [java.util ArrayList]))
 
 
-(def CAM-SIZE (cv/camera-frame-size))
+(def CAM-DEV-NUM 1)
+(def CAM-SIZE (cv/camera-frame-size CAM-DEV-NUM))
 (def WIDTH  (int (:width  CAM-SIZE)))
 (def HEIGHT (int (:height CAM-SIZE)))
 
@@ -20,10 +21,9 @@
 (def PIX-CNT1 (* WIDTH HEIGHT 4))
 (def PIX-CNT2 (* WIDTH HEIGHT))
 
-(def ALPHA-STILL 125.0)
+(def ALPHA-STILL 255.0)
 
-
-(def MOSAIC-BIN-SIZE 12)
+(def MOSAIC-BIN-SIZE 36)
 (def MOSAIC-BIN-SIZE-X2  (* MOSAIC-BIN-SIZE 2.0))
 (def MOSAIC-BIN-SIZE-2   (/ MOSAIC-BIN-SIZE 2.0))
 (def NEG-MOSAIC-BIN-SIZE (- MOSAIC-BIN-SIZE))
@@ -109,7 +109,7 @@
     :gray-mat (Mat.)
     :rgba-mat (Mat.)
     :drawn-mat (Mat. HEIGHT WIDTH CvType/CV_8UC4)
-    :camera (cv/camera 0)
+    :camera (cv/camera CAM-DEV-NUM)
     :p-image (q/create-image WIDTH HEIGHT :rgb)
     :triangle-points tri-pts
     :triangle-orientations tri-orients

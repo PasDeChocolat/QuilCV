@@ -43,12 +43,15 @@
 ;; <--End OpenCV Implementation Wrapper
 
 
-(defn camera-frame-size []
-  (let [cam (camera 0)
-        s (-> (grab-frame! cam (Mat.))
-              (.size))]
-    (.release cam)
-    {:width (.width s) :height (.height s)}))
+(defn camera-frame-size
+  ([]
+     (camera-frame-size [0]))
+  ([cam-dev-num]
+     (let [cam (camera cam-dev-num)
+           s (-> (grab-frame! cam (Mat.))
+                 (.size))]
+       (.release cam)
+       {:width (.width s) :height (.height s)})))
 
 
 (defn update-frame [state]
