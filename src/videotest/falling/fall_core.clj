@@ -177,7 +177,6 @@
 (defn update [state]
   (-> state
       (cv/update-frame)
-      
       (update-rgba)
       (overlay-triangles)
       (update-drawn-p-image)))
