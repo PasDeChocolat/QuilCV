@@ -3,13 +3,13 @@
    [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
-   [videotest.falling.cv :as cv])
+   [videotest.falling.cv :as cv]
+   [videotest.falling.cv-draw :as cv-draw])
   (:import
-   [org.opencv.core Core CvType Mat MatOfKeyPoint MatOfPoint Point Scalar Size]
+   [org.opencv.core Core CvType Mat MatOfKeyPoint Point Size]
    [org.opencv.features2d FeatureDetector KeyPoint]
    [org.opencv.imgproc Imgproc]
-   [java.nio ByteBuffer ByteOrder]
-   [java.util ArrayList]))
+   [java.nio ByteBuffer ByteOrder]))
 
 (def CAM-DEV-NUM 0)
 (def CAM-SIZE (cv/camera-frame-size CAM-DEV-NUM))
@@ -142,17 +142,6 @@
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
 
-(defn draw-mosaic-glyph [img-mat
-                         color
-                         glyph-pts]
-  (let [poly (MatOfPoint.)
-        c (apply (fn [r g b _]
-                   (let [a ALPHA-STILL]
-                     (Scalar. r g b a)))
-                 color)]
-    (.fromList poly (ArrayList. glyph-pts))
-    (Core/fillPoly img-mat (ArrayList. [poly]) c)))
-
 (defn draw-mosaic-pair
   [triangle-glyphs drawn-mat rgba-mat [pt1 pt2]]
   (let [color-fn (fn [display-x display-y]
@@ -168,8 +157,8 @@
         [display-x2 display-y2] pt2
         c1 (color-fn display-x1 display-y1)
         c2 (color-fn display-x2 display-y2)]
-    (draw-mosaic-glyph drawn-mat c1 (triangle-glyphs pt1))
-    (draw-mosaic-glyph drawn-mat c2 (triangle-glyphs pt2))))
+    (cv-draw/draw-poly-with-pts drawn-mat c1 (triangle-glyphs pt1))
+    (cv-draw/draw-poly-with-pts drawn-mat c2 (triangle-glyphs pt2))))
 
 (defn overlay-triangles
   [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs] :as state}]
