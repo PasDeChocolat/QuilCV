@@ -1,6 +1,6 @@
 (ns videotest.falling.fall-core
   (:require
-   [quil.applet :as qa :only [applet-close]]
+   [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
    [videotest.falling.cv :as cv])
