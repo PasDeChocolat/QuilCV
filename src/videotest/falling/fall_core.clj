@@ -85,9 +85,7 @@
                          cam-y (* row CAM-BIN-SIZE)
                          cam-x (+ cam-x CAM-BIN-SIZE-2)
                          cam-y (+ cam-y CAM-BIN-SIZE)
-                         c (.get rgba-mat
-                                 cam-y
-                                 cam-x)]
+                         c (.get rgba-mat cam-y cam-x)]
                      (if (< 0 (count c))
                        (vec c)
                        [0 0 0 255])))
