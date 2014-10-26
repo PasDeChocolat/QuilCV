@@ -33,17 +33,14 @@
 (def ALPHA-STILL 255.0)
 
 ;; 32 works
-(def NUM-COL-BINS 32.0)
+(def NUM-COL-BINS 64.0)
 (def DISPLAY-BIN-SIZE (/ DISPLAY-WIDTH NUM-COL-BINS))
 (def NUM-ROW-BINS (/ DISPLAY-HEIGHT DISPLAY-BIN-SIZE))
 
 (def DISPLAY-BIN-SIZE-X2  (* DISPLAY-BIN-SIZE 2.0))
 (def DISPLAY-BIN-SIZE-2   (/ DISPLAY-BIN-SIZE 2.0))
-(def NEG-DISPLAY-BIN-SIZE (- DISPLAY-BIN-SIZE))
-;;(def NUM-COL-BINS (/ DISPLAY-WIDTH  MOSAIC-BIN-SIZE))
-;;(def NUM-ROW-BINS (/ DISPLAY-HEIGHT MOSAIC-BIN-SIZE))
 
-(def CAM-BIN-SIZE (/ CAM-WIDTH NUM-COL-BINS))
+(def CAM-BIN-SIZE   (/ CAM-WIDTH NUM-COL-BINS))
 (def CAM-BIN-SIZE-2 (/ CAM-BIN-SIZE 2.0))
 (defn display->cam [display-x-or-y]
   (* display-x-or-y (/ CAM-WIDTH DISPLAY-WIDTH)))
@@ -66,16 +63,16 @@
                                          tri-pts tri-orients)]
    {:b-array (byte-array PIX-CNT1)
     :i-array (int-array PIX-CNT2)
-    :frame-mat (mat CAM-HEIGHT CAM-WIDTH CvType/CV_8UC3)
+    :frame-mat  (mat CAM-HEIGHT CAM-WIDTH CvType/CV_8UC3)
     :output-mat (mat DISPLAY-HEIGHT DISPLAY-WIDTH CvType/CV_8UC4)
-    :gray-mat (mat)
-    :rgba-mat (mat CAM-HEIGHT CAM-WIDTH CvType/CV_8UC4)
-    :drawn-mat (mat DISPLAY-HEIGHT DISPLAY-WIDTH CvType/CV_8UC4)
-    :camera (cv/camera CAM-DEV-NUM)
+    :gray-mat   (mat)
+    :rgba-mat   (mat CAM-HEIGHT CAM-WIDTH CvType/CV_8UC4)
+    :drawn-mat  (mat DISPLAY-HEIGHT DISPLAY-WIDTH CvType/CV_8UC4)
+    :camera  (cv/camera CAM-DEV-NUM)
     :p-image (q/create-image DISPLAY-WIDTH DISPLAY-HEIGHT :rgb)
-    :triangle-points tri-pts
+    :triangle-points       tri-pts
     :triangle-orientations tri-orients
-    :triangle-glyphs tri-glyphs
+    :triangle-glyphs       tri-glyphs
     :color-record {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
@@ -86,32 +83,32 @@
      (map ))
   state)
 
-(defn draw-mosaic-pair
-  [triangle-glyphs drawn-mat rgba-mat [pt1 pt2]]
+(defn draw-mosaic
+  [tri-points tri-glyphs drawn-mat rgba-mat [col row :as coords]]
   (let [color-fn (fn [display-x display-y]
                    (let [cam-x (display->cam display-x)
                          cam-y (display->cam display-y)
+                         cam-x (+ cam-x CAM-BIN-SIZE-2)
+                         cam-y (+ cam-y CAM-BIN-SIZE)
                          c (.get rgba-mat
-                                 (+ cam-y CAM-BIN-SIZE-2)
-                                 (+ cam-x CAM-BIN-SIZE-2))]
+                                 cam-y
+                                 cam-x)]
                      (if (< 0 (count c))
                        (vec c)
                        [0 0 0 255])))
-        [display-x1 display-y1] pt1
-        [display-x2 display-y2] pt2
-        c1 (color-fn display-x1 display-y1)
-        c2 (color-fn display-x2 display-y2)]
-    (cv-draw/draw-poly-with-pts drawn-mat c1 (triangle-glyphs pt1))
-    (cv-draw/draw-poly-with-pts drawn-mat c2 (triangle-glyphs pt2))))
+        [display-x display-y] (tri-points coords)
+        c (color-fn display-x display-y)]
+    (cv-draw/draw-poly-with-pts drawn-mat c (tri-glyphs coords))))
 
 (defn overlay-triangles
   [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs] :as state}]
   (dorun
-   (map (partial draw-mosaic-pair
+   (map (partial draw-mosaic
+                 triangle-points
                  triangle-glyphs
                  drawn-mat
                  rgba-mat)
-        (partition 2 triangle-points)))
+        (keys triangle-points)))
   state)
 
 (defn update-drawn-p-image [state]
