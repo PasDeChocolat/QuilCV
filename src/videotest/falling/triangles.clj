@@ -68,5 +68,5 @@
                                          rot1 x y))
                   (assoc-in [pt2] (glyph display-bin-size-x2
                                          rot2 x y)))))
-          {}
-          (partition 2 triangle-points)))
+            {}
+            (partition 2 triangle-points)))
