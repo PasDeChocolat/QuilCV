@@ -1,5 +1,6 @@
 (ns videotest.falling.fall-core
   (:require
+   [clojure.math.numeric-tower :as math]
    [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
@@ -33,7 +34,7 @@
 (def ALPHA-STILL 255.0)
 
 ;; 32 works
-(def NUM-COL-BINS 64.0)
+(def NUM-COL-BINS 32.0)
 (def DISPLAY-BIN-SIZE (/ DISPLAY-WIDTH NUM-COL-BINS))
 (def NUM-ROW-BINS (/ DISPLAY-HEIGHT DISPLAY-BIN-SIZE))
 
@@ -73,7 +74,8 @@
     :triangle-points       tri-pts
     :triangle-orientations tri-orients
     :triangle-glyphs       tri-glyphs
-    :color-record {}}))
+    :color-record {}
+    :previous-color-record {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
@@ -92,20 +94,41 @@
                        (keys triangle-points))]
     (assoc-in state [:color-record] colors)))
 
+(defn update-previous-color-record
+  [{:keys [color-record] :as state}]
+  (assoc-in state [:previous-color-record] color-record))
+
+(defn color-changed? [current-color previous-color]
+  (if (nil? previous-color)
+    false
+    (let [changes (map (comp math/abs -)
+                       current-color previous-color)
+          channel-change-big-enough? #(< 0 100 %)]
+      (some channel-change-big-enough? changes))))
+
+(defn mosaic-color [current-color previous-color]
+  (if (color-changed? current-color previous-color)
+    [255 0 0 255]
+    current-color))
+
 (defn draw-mosaic
-  [tri-points tri-glyphs drawn-mat color-record [col row :as coords]]
+  [tri-points tri-glyphs drawn-mat
+   color-record previous-color-record
+   [col row :as coords]]
   (let [[display-x display-y] (tri-points coords)
-        c (color-record coords)]
+        c (mosaic-color (color-record coords) (previous-color-record coords))]
     (cv-draw/draw-poly-with-pts drawn-mat c (tri-glyphs coords))))
 
 (defn overlay-triangles
-  [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs color-record] :as state}]
+  [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs
+           color-record previous-color-record] :as state}]
   (dorun
    (map (partial draw-mosaic
                  triangle-points
                  triangle-glyphs
                  drawn-mat
-                 color-record)
+                 color-record
+                 previous-color-record)
         (keys triangle-points)))
   state)
 
@@ -119,7 +142,8 @@
       (update-rgba)
       (update-color-record)
       (overlay-triangles)
-      (update-drawn-p-image)))
+      (update-drawn-p-image)
+      (update-previous-color-record)))
 
 (defn draw [state]
   (let [{:keys [p-image frame-mat]} state]
