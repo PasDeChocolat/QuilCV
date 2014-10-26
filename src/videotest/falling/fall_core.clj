@@ -4,7 +4,8 @@
    [quil.core :as q]
    [quil.middleware :as m]
    [videotest.falling.cv :as cv]
-   [videotest.falling.cv-draw :as cv-draw])
+   [videotest.falling.cv-draw :as cv-draw]
+   [videotest.falling.triangles :as tri])
   (:import
    [org.opencv.core Core CvType Mat MatOfKeyPoint Point Size]
    [org.opencv.features2d FeatureDetector KeyPoint]
@@ -48,71 +49,6 @@
   (* display-x-or-y (/ CAM-WIDTH DISPLAY-WIDTH)))
 
 
-(defn triangle-points
-  "Saves origin points for each triangle, which is a vector pair of
-   x and y positions in the image material [col row]."
-  []
-  (for [col-bin (range 0 NUM-COL-BINS)
-        row-bin (range 0 NUM-ROW-BINS)
-        :let [mat-col (* col-bin DISPLAY-BIN-SIZE)
-              mat-row (* row-bin DISPLAY-BIN-SIZE)]
-        :when (= 0 (mod col-bin 2))]
-    [mat-col mat-row]))
-
-(defn triangle-orientations
-  "Radian orientations associated to triangle origin points."
-  [triangle-points]
-  (reduce (fn [memo [pt1 pt2]]
-            (let [rot1 (rand-int 4)]
-              (-> memo
-                  (assoc-in [pt1] rot1))))
-          {}
-          (partition 2 triangle-points)))
-
-(defn apex-top-right [x y]
-  [(Point. x y)
-   (Point. (+ x DISPLAY-BIN-SIZE-X2) y)
-   (Point. (+ x DISPLAY-BIN-SIZE-X2) (+ y DISPLAY-BIN-SIZE-X2))])
-
-(defn apex-bottom-left [x y]
-  [(Point. (+ x DISPLAY-BIN-SIZE-X2) (+ y DISPLAY-BIN-SIZE-X2))
-   (Point. x (+ y DISPLAY-BIN-SIZE-X2))
-   (Point. x y)])
-
-(defn apex-top-left [x y]
-  [(Point. x (+ y DISPLAY-BIN-SIZE-X2))
-   (Point. x y)
-   (Point. (+ x DISPLAY-BIN-SIZE-X2) y)])
-
-(defn apex-bottom-right [x y]
-  [(Point. (+ x DISPLAY-BIN-SIZE-X2) y)
-   (Point. (+ x DISPLAY-BIN-SIZE-X2) (+ y DISPLAY-BIN-SIZE-X2))
-   (Point. x (+ y DISPLAY-BIN-SIZE-X2))])
-
-(defn glyph [n x y]
-  (cond
-   (= n 0)
-   (apex-top-right x y)
-
-   (= n 1)
-   (apex-bottom-right x y)
-
-   (= n 2)
-   (apex-bottom-left x y)
-
-   (= n 3)
-   (apex-top-left x y)))
-
-(defn triangle-glyphs [triangle-points triangle-orientations]
-    (reduce (fn [memo [[x y :as pt1] pt2]]
-              (let [rot1 (triangle-orientations pt1)
-                    rot2 (mod (+ rot1 2) 4)]
-              (-> memo
-                  (assoc-in [pt1] (glyph rot1 x y))
-                  (assoc-in [pt2] (glyph rot2 x y)))))
-          {}
-          (partition 2 triangle-points)))
-
 (defn mat
   ([]
      (Mat.))
@@ -123,9 +59,11 @@
 ;; iArray is the temporary integer array buffer for PImage pixels.
 (defn setup []
   (q/frame-rate 60)
-  (let [tri-pts (triangle-points)
-        tri-orients (triangle-orientations tri-pts)
-        tri-glyphs (triangle-glyphs tri-pts tri-orients)]
+  (let [tri-pts     (tri/triangle-points NUM-COL-BINS NUM-ROW-BINS
+                                         DISPLAY-BIN-SIZE)
+        tri-orients (tri/triangle-orientations tri-pts)
+        tri-glyphs  (tri/triangle-glyphs DISPLAY-BIN-SIZE-X2
+                                         tri-pts tri-orients)]
    {:b-array (byte-array PIX-CNT1)
     :i-array (int-array PIX-CNT2)
     :frame-mat (mat CAM-HEIGHT CAM-WIDTH CvType/CV_8UC3)
@@ -137,10 +75,16 @@
     :p-image (q/create-image DISPLAY-WIDTH DISPLAY-HEIGHT :rgb)
     :triangle-points tri-pts
     :triangle-orientations tri-orients
-    :triangle-glyphs tri-glyphs}))
+    :triangle-glyphs tri-glyphs
+    :color-record {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
+
+(defn update-color-record [{:keys [rgba-mat color-record] :as state}]
+  #_(dorun
+     (map ))
+  state)
 
 (defn draw-mosaic-pair
   [triangle-glyphs drawn-mat rgba-mat [pt1 pt2]]
@@ -179,7 +123,8 @@
       (cv/update-frame)
       (update-rgba)
       (overlay-triangles)
-      (update-drawn-p-image)))
+      (update-drawn-p-image)
+      (update-color-record)))
 
 (defn draw [state]
   (let [{:keys [p-image frame-mat]} state]
