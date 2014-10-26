@@ -86,18 +86,25 @@
 (defn draw-mosaic
   [tri-points tri-glyphs drawn-mat rgba-mat [col row :as coords]]
   (let [color-fn (fn [display-x display-y]
-                   (let [cam-x (display->cam display-x)
-                         cam-y (display->cam display-y)
+                   (let [cam-x (int (display->cam display-x))
+                         cam-y (int (display->cam display-y))
                          cam-x (+ cam-x CAM-BIN-SIZE-2)
                          cam-y (+ cam-y CAM-BIN-SIZE)
                          c (.get rgba-mat
-                                 cam-y
-                                 cam-x)]
+                                 (min (- CAM-HEIGHT 1) cam-y)
+                                 (min (- CAM-WIDTH  1) cam-x))]
                      (if (< 0 (count c))
                        (vec c)
                        [0 0 0 255])))
         [display-x display-y] (tri-points coords)
         c (color-fn display-x display-y)]
+    (when (and (= 63 col) (= 0 row))
+      (println "display-x: " display-x)
+      (println "display-y: " display-y)
+      (println "coords: " coords)
+      (println "points: " (tri-glyphs coords))
+      (println "color: " c))
+    
     (cv-draw/draw-poly-with-pts drawn-mat c (tri-glyphs coords))))
 
 (defn overlay-triangles
@@ -109,6 +116,7 @@
                  drawn-mat
                  rgba-mat)
         (keys triangle-points)))
+  ;(cv-draw/draw-poly-with-pts drawn-mat [255 0 0 255] (triangle-glyphs [63 0]))
   state)
 
 (defn update-drawn-p-image [state]
@@ -148,4 +156,4 @@
   :on-close on-close
   :middleware [m/fun-mode])
 
-  (.setResizable (.frame videotest) true)
+(.setResizable (.frame videotest) true)

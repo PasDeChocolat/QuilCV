@@ -29,24 +29,28 @@
            left-cols)))
 
 (defn apex-top-right [side-w x y]
-  [(Point.    x            y)
-   (Point. (+ x side-w)    y)
-   (Point. (+ x side-w) (+ y side-w))])
+  (let [w (- side-w 1)]
+    [(Point.    x       y)
+     (Point. (+ x w)    y)
+     (Point. (+ x w) (+ y w))]))
 
 (defn apex-bottom-left [side-w x y]
-  [(Point. (+ x side-w) (+ y side-w))
-   (Point.    x         (+ y side-w))
-   (Point.    x            y)])
+  (let [w (- side-w 1)]
+    [(Point. (+ x w) (+ y w))
+     (Point.    x    (+ y w))
+     (Point.    x       y)]))
 
 (defn apex-top-left [side-w x y]
-  [(Point.    x         (+ y side-w))
-   (Point.    x            y)
-   (Point. (+ x side-w)    y)])
+  (let [w (- side-w 1)]
+    [(Point.    x    (+ y w))
+     (Point.    x       y)
+     (Point. (+ x w)    y)]))
 
 (defn apex-bottom-right [side-w x y]
-  [(Point. (+ x side-w)    y)
-   (Point. (+ x side-w) (+ y side-w))
-   (Point.    x         (+ y side-w))])
+  (let [w (- side-w 1)]
+    [(Point. (+ x w)    y)
+     (Point. (+ x w) (+ y w))
+     (Point.    x    (+ y w))]))
 
 (defn glyph [side-w n x y]
   (cond
