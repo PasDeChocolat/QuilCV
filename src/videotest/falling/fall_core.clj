@@ -80,14 +80,14 @@
 
 (defn update-color-record
   [{:keys [triangle-points rgba-mat color-record] :as state}]
-  (let [color-fn (fn [col row]
-                   (let [cam-x (+ (* col CAM-BIN-SIZE)
-                                  CAM-BIN-SIZE-2)
-                         cam-y (+ (* row CAM-BIN-SIZE)
-                                  CAM-BIN-SIZE)]
-                     (vec (.get rgba-mat cam-y cam-x))))
+  (let [cam->color (fn [col row]
+                     (let [cam-x (+ (* col CAM-BIN-SIZE)
+                                    CAM-BIN-SIZE-2)
+                           cam-y (+ (* row CAM-BIN-SIZE)
+                                    CAM-BIN-SIZE)]
+                       (vec (.get rgba-mat cam-y cam-x))))
         colors (reduce (fn [memo [col row :as coords]]
-                         (assoc-in memo [coords] (color-fn col row)))
+                         (assoc-in memo [coords] (cam->color col row)))
                        {}
                        (keys triangle-points))]
    (assoc-in state [:color-record] colors)))
