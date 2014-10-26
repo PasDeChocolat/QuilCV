@@ -31,10 +31,10 @@
 (def PIX-CNT1 (int (* DISPLAY-WIDTH DISPLAY-HEIGHT 4)))
 (def PIX-CNT2 (int (* DISPLAY-WIDTH DISPLAY-HEIGHT)))
 
-(def ALPHA-STILL 255.0)
+(def ALPHA-STILL 100.0)
 
 ;; 32 works
-(def NUM-COL-BINS 32.0)
+(def NUM-COL-BINS 64.0)
 (def DISPLAY-BIN-SIZE (/ DISPLAY-WIDTH NUM-COL-BINS))
 (def NUM-ROW-BINS (/ DISPLAY-HEIGHT DISPLAY-BIN-SIZE))
 
@@ -103,13 +103,16 @@
     false
     (let [changes (map (comp math/abs -)
                        current-color previous-color)
-          channel-change-big-enough? #(< 0 100 %)]
+          channel-change-big-enough? #(< 50 %)]
       (some channel-change-big-enough? changes))))
+
+(defn color-with-alpha [c alpha]
+  (conj (vec (take 3 c)) alpha))
 
 (defn mosaic-color [current-color previous-color]
   (if (color-changed? current-color previous-color)
-    [255 0 0 255]
-    current-color))
+    current-color
+    (color-with-alpha current-color ALPHA-STILL)))
 
 (defn draw-mosaic
   [tri-points tri-glyphs drawn-mat
@@ -147,7 +150,7 @@
 
 (defn draw [state]
   (let [{:keys [p-image frame-mat]} state]
-    (q/background 0)
+    (q/background 255)
     (q/push-matrix)
     (q/translate DISPLAY-WIDTH 0)
     (q/scale -1 1)
