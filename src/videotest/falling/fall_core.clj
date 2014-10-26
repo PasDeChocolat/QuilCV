@@ -84,11 +84,8 @@
                    (let [cam-x (+ (* col CAM-BIN-SIZE)
                                   CAM-BIN-SIZE-2)
                          cam-y (+ (* row CAM-BIN-SIZE)
-                                  CAM-BIN-SIZE)
-                         c (.get rgba-mat cam-y cam-x)]
-                     (if (< 0 (count c))
-                       (vec c)
-                       [0 0 0 255])))
+                                  CAM-BIN-SIZE)]
+                     (vec (.get rgba-mat cam-y cam-x))))
         colors (reduce (fn [memo [col row :as coords]]
                          (assoc-in memo [coords] (color-fn col row)))
                        {}
