@@ -98,13 +98,6 @@
                        [0 0 0 255])))
         [display-x display-y] (tri-points coords)
         c (color-fn display-x display-y)]
-    (when (and (= 63 col) (= 0 row))
-      (println "display-x: " display-x)
-      (println "display-y: " display-y)
-      (println "coords: " coords)
-      (println "points: " (tri-glyphs coords))
-      (println "color: " c))
-    
     (cv-draw/draw-poly-with-pts drawn-mat c (tri-glyphs coords))))
 
 (defn overlay-triangles
