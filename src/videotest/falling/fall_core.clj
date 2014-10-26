@@ -90,7 +90,7 @@
                          (assoc-in memo [coords] (cam->color col row)))
                        {}
                        (keys triangle-points))]
-   (assoc-in state [:color-record] colors)))
+    (assoc-in state [:color-record] colors)))
 
 (defn draw-mosaic
   [tri-points tri-glyphs drawn-mat color-record [col row :as coords]]
