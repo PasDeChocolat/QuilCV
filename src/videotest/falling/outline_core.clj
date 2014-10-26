@@ -119,8 +119,13 @@
    color-record previous-color-record
    [col row :as coords]]
   (let [[display-x display-y] (tri-points coords)
-        c (mosaic-color (color-record coords) (previous-color-record coords))]
-    (cv-draw/draw-poly-with-pts drawn-mat c (tri-glyphs coords))))
+        current-color (color-record coords)
+        previous-color (previous-color-record coords)
+        c (mosaic-color current-color previous-color)
+        pts (tri-glyphs coords)]
+    (if (color-changed? current-color previous-color)
+      (cv-draw/draw-poly-outline-with-pts drawn-mat current-color pts)
+      (cv-draw/draw-poly-with-pts drawn-mat c pts))))
 
 (defn overlay-triangles
   [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs
