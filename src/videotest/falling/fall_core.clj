@@ -78,38 +78,40 @@
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
 
-(defn update-color-record [{:keys [rgba-mat color-record] :as state}]
-  #_(dorun
-     (map ))
-  state)
-
-(defn draw-mosaic
-  [tri-points tri-glyphs drawn-mat rgba-mat [col row :as coords]]
-  (let [color-fn (fn [display-x display-y]
-                   (let [cam-x (int (display->cam display-x))
-                         cam-y (int (display->cam display-y))
+(defn update-color-record
+  [{:keys [triangle-points rgba-mat color-record] :as state}]
+  (let [color-fn (fn [col row]
+                   (let [cam-x (* col CAM-BIN-SIZE)
+                         cam-y (* row CAM-BIN-SIZE)
                          cam-x (+ cam-x CAM-BIN-SIZE-2)
                          cam-y (+ cam-y CAM-BIN-SIZE)
                          c (.get rgba-mat
-                                 (min (- CAM-HEIGHT 1) cam-y)
-                                 (min (- CAM-WIDTH  1) cam-x))]
+                                 cam-y
+                                 cam-x)]
                      (if (< 0 (count c))
                        (vec c)
                        [0 0 0 255])))
-        [display-x display-y] (tri-points coords)
-        c (color-fn display-x display-y)]
+        colors (reduce (fn [memo [col row :as coords]]
+                         (assoc-in memo [coords] (color-fn col row)))
+                       {}
+                       (keys triangle-points))]
+   (assoc-in state [:color-record] colors)))
+
+(defn draw-mosaic
+  [tri-points tri-glyphs drawn-mat color-record [col row :as coords]]
+  (let [[display-x display-y] (tri-points coords)
+        c (color-record coords)]
     (cv-draw/draw-poly-with-pts drawn-mat c (tri-glyphs coords))))
 
 (defn overlay-triangles
-  [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs] :as state}]
+  [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs color-record] :as state}]
   (dorun
    (map (partial draw-mosaic
                  triangle-points
                  triangle-glyphs
                  drawn-mat
-                 rgba-mat)
+                 color-record)
         (keys triangle-points)))
-  ;(cv-draw/draw-poly-with-pts drawn-mat [255 0 0 255] (triangle-glyphs [63 0]))
   state)
 
 (defn update-drawn-p-image [state]
@@ -120,9 +122,9 @@
   (-> state
       (cv/update-frame)
       (update-rgba)
+      (update-color-record)
       (overlay-triangles)
-      (update-drawn-p-image)
-      (update-color-record)))
+      (update-drawn-p-image)))
 
 (defn draw [state]
   (let [{:keys [p-image frame-mat]} state]
