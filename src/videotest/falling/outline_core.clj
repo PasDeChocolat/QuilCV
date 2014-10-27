@@ -111,10 +111,8 @@
 (defn color-with-alpha [c alpha]
   (conj (vec (take 3 c)) alpha))
 
-(defn mosaic-color [current-color previous-color]
-  (if (color-changed? current-color previous-color)
-    current-color
-    (color-with-alpha current-color ALPHA-STILL)))
+(defn mosaic-color [current-color]
+  (color-with-alpha current-color ALPHA-STILL))
 
 (defn draw-mosaic
   [tri-points tri-glyphs drawn-mat
@@ -122,12 +120,9 @@
    [col row :as coords]]
   (let [[display-x display-y] (tri-points coords)
         current-color (color-record coords)
-        previous-color (previous-color-record coords)
-        c (mosaic-color current-color previous-color)
+        c (mosaic-color current-color)
         pts (tri-glyphs coords)]
-    (if (color-changed? current-color previous-color)
-      (cv-draw/draw-partial-poly-outline-with-pts drawn-mat current-color pts)
-      (cv-draw/draw-poly-with-pts drawn-mat c pts))))
+    (cv-draw/draw-poly-with-pts drawn-mat c pts)))
 
 (defn overlay-triangles
   [{:keys [drawn-mat rgba-mat triangle-points triangle-glyphs
@@ -142,6 +137,65 @@
         (keys triangle-points)))
   state)
 
+(def MAX-CORAL-LIFE 60)
+
+(defn init-polyp []
+  {:life (inc (rand-int MAX-CORAL-LIFE))})
+
+(defn build-coral
+  [{:keys [coral triangle-points color-record previous-color-record] :as state}]
+  (let [inc-life (fn [polyp]
+                   (let [polyp (if (empty? polyp)
+                                 (init-polyp)
+                                 polyp)]
+                     (update-in polyp [:life] #(min MAX-CORAL-LIFE
+                                                    (+ 10 %)))))]
+    (assoc-in state [:coral]
+              (reduce (fn [memo coords]
+                        (if (color-changed? (color-record coords) (previous-color-record coords))
+                          (update-in memo [coords] inc-life)
+                          memo))
+                      coral
+                      (keys triangle-points)))))
+
+(defn decay-coral
+  [{:keys [coral triangle-points color-record previous-color-record] :as state}]
+  (let [dec-life (fn [polyp]
+                   (update-in polyp [:life] #(max 0 (dec %))))]
+    (assoc-in state [:coral]
+              (reduce (fn [memo [coords polyp]]
+                        (if (>= 1 (:life polyp))
+                          (dissoc memo coords)
+                          (update-in memo [coords] dec-life)))
+                      coral
+                      coral))))
+
+(defn update-coral [state]
+  (-> state
+      (build-coral)
+      (decay-coral)))
+
+(defn overlay-coral-piece
+  [tri-points tri-glyphs color-record drawn-mat coords life]
+  (let [[display-x display-y] (tri-points coords)
+        c (color-with-alpha (color-record coords) (q/map-range life 0 MAX-CORAL-LIFE 0 255))
+        pts (tri-glyphs coords)]
+    (cv-draw/draw-partial-poly-outline-with-pts drawn-mat c pts)))
+
+(defn overlay-coral
+  [{:keys [coral triangle-points triangle-glyphs color-record drawn-mat] :as state}]
+  (dorun
+   (map (fn [[coords {:keys [life]}]]
+          (if (< 0 life)
+            (overlay-coral-piece triangle-points
+                                 triangle-glyphs
+                                 color-record
+                                 drawn-mat
+                                 coords
+                                 life)))
+        coral))
+  state)
+
 (defn update-drawn-p-image [state]
   (let [{:keys [drawn-mat output-mat b-array i-array]} state]
     (update-in state [:p-image] #(cv/mat->p-img drawn-mat output-mat b-array i-array %))))
@@ -152,6 +206,8 @@
       (update-rgba)
       (update-color-record)
       (overlay-triangles)
+      (update-coral)
+      (overlay-coral)
       (update-drawn-p-image)
       (update-previous-color-record)))
 
@@ -172,7 +228,7 @@
        (.release camera))))
 
 (q/defsketch videotest
-  :title "Video Test"
+  :title "x"
   :size [DISPLAY-WIDTH DISPLAY-HEIGHT]
   :setup setup
   :update update
