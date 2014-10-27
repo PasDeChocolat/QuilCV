@@ -3,9 +3,9 @@
    [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
-   [videotest.falling.motion-trace :as mtrace]
    [videotest.falling.cv :as cv]
    [videotest.falling.cv-draw :as cv-draw]
+   [videotest.falling.motion-trace :as mtrace]
    [videotest.falling.triangles :as tri])
   (:import
    [org.opencv.core Core CvType Mat MatOfKeyPoint Point Size]
