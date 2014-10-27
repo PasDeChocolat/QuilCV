@@ -3,7 +3,7 @@
    [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
-   [videotest.falling.coral :as coral]
+   [videotest.falling.motion-trace :as mtrace]
    [videotest.falling.cv :as cv]
    [videotest.falling.cv-draw :as cv-draw]
    [videotest.falling.triangles :as tri])
@@ -76,7 +76,8 @@
     :triangle-glyphs       tri-glyphs
     :color-record {}
     :previous-color-record {}
-    :coral {}}))
+    :motion-trace {}
+    :movers {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
@@ -100,7 +101,7 @@
   (assoc-in state [:previous-color-record] color-record))
 
 (defn mosaic-color [current-color]
-  (coral/color-with-alpha current-color ALPHA-STILL))
+  (mtrace/color-with-alpha current-color ALPHA-STILL))
 
 (defn draw-mosaic
   [tri-points tri-glyphs drawn-mat
@@ -135,8 +136,8 @@
       (update-rgba)
       (update-color-record)
       (overlay-triangles)
-      (coral/update-coral)
-      (coral/overlay-coral)
+      (mtrace/update-motion-trace)
+      (mtrace/overlay-motion-trace)
       (update-drawn-p-image)
       (update-previous-color-record)))
 
