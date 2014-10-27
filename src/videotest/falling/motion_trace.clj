@@ -50,8 +50,8 @@
 
 (defn update-motion-trace [state]
   (-> state
-      (build-motion-trace)
-      (decay-motion-trace)))
+      (decay-motion-trace)
+      (build-motion-trace)))
 
 (defn overlay-single-trace
   [tri-points tri-glyphs color-record drawn-mat coords life]

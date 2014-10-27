@@ -5,6 +5,7 @@
    [quil.middleware :as m]
    [videotest.falling.cv :as cv]
    [videotest.falling.cv-draw :as cv-draw]
+   [videotest.falling.motion-seeds :as mseeds]
    [videotest.falling.motion-trace :as mtrace]
    [videotest.falling.triangles :as tri])
   (:import
@@ -77,7 +78,7 @@
     :color-record {}
     :previous-color-record {}
     :motion-trace {}
-    :movers {}}))
+    :motion-seeds []}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
@@ -131,15 +132,16 @@
     (update-in state [:p-image] #(cv/mat->p-img drawn-mat output-mat b-array i-array %))))
 
 (defn update [state]
-  (-> state
-      (cv/update-frame)
-      (update-rgba)
-      (update-color-record)
-      (overlay-triangles)
-      (mtrace/update-motion-trace)
-      (mtrace/overlay-motion-trace)
-      (update-drawn-p-image)
-      (update-previous-color-record)))
+  (->> state
+       (cv/update-frame)
+       (update-rgba)
+       (update-color-record)
+       (overlay-triangles)
+       (mtrace/update-motion-trace)
+       (mtrace/overlay-motion-trace)
+       (mseeds/update-motion-seeds DISPLAY-BIN-SIZE DISPLAY-HEIGHT)
+       (update-drawn-p-image)
+       (update-previous-color-record)))
 
 (defn draw [state]
   (let [{:keys [p-image frame-mat]} state]
@@ -149,6 +151,7 @@
     (q/scale -1 1)
     (when p-image
       (q/image p-image 0 0))
+    (mseeds/draw-motion-seeds state)
     (q/pop-matrix)))
 
 (defn on-close
