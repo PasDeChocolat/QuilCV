@@ -4,6 +4,7 @@
    [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
    [quil.middleware :as m]
+   [videotest.falling.coral :as coral]
    [videotest.falling.cv :as cv]
    [videotest.falling.cv-draw :as cv-draw]
    [videotest.falling.triangles :as tri])
@@ -75,7 +76,8 @@
     :triangle-orientations tri-orients
     :triangle-glyphs       tri-glyphs
     :color-record {}
-    :previous-color-record {}}))
+    :previous-color-record {}
+    :coral {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
@@ -124,7 +126,7 @@
         c (mosaic-color current-color previous-color)
         pts (tri-glyphs coords)]
     (if (color-changed? current-color previous-color)
-      (cv-draw/draw-poly-outline-with-pts drawn-mat current-color pts)
+      (cv-draw/draw-partial-poly-outline-with-pts drawn-mat current-color pts)
       (cv-draw/draw-poly-with-pts drawn-mat c pts))))
 
 (defn overlay-triangles

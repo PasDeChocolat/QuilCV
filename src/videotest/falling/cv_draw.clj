@@ -30,3 +30,15 @@
                    img-mat
                    c)
           pts))))
+
+(defn draw-partial-poly-outline-with-pts
+  "Draw an outlined polygon with the given points and color."
+  [img-mat color glyph-pts]
+  (let [pts (take 3 (partition 2 1 (cycle glyph-pts)))
+        rand-nth (rand-int (count pts))
+        ;;pts (concat (take rand-nth pts) (drop (inc rand-nth) pts))
+        pts (nth pts rand-nth)
+        c (apply (fn [r g b a]
+                   (Scalar. r g b a))
+                 color)]
+    (draw-line-with-pts img-mat c pts)))
