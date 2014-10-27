@@ -23,9 +23,8 @@
 (defn build-motion-trace
   [{:keys [motion-trace triangle-points color-record previous-color-record] :as state}]
   (let [inc-life (fn [trace]
-                   (let [trace (if (empty? trace)
-                                 (init-trace)
-                                 trace)]
+                   (if (empty? trace)
+                     (init-trace)
                      (update-in trace [:life] #(min MAX-TRACE-LIFE
                                                     (+ 10 %)))))]
     (assoc-in state [:motion-trace]
