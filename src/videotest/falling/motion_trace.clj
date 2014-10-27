@@ -7,7 +7,7 @@
 (def MAX-TRACE-LIFE 60)
 
 (defn init-trace []
-  {:life (inc (rand-int MAX-TRACE-LIFE))})
+  {:life MAX-TRACE-LIFE})
 
 (defn color-with-alpha [c alpha]
   (conj (vec (take 3 c)) alpha))
@@ -39,7 +39,7 @@
 (defn decay-motion-trace
   [{:keys [motion-trace triangle-points color-record previous-color-record] :as state}]
   (let [dec-life (fn [trace]
-                   (update-in trace [:life] #(max 0 (dec %))))]
+                   (update-in trace [:life] #(max 0 (- % (+ 1 (rand 10))))))]
     (assoc-in state [:motion-trace]
               (reduce (fn [memo [coords trace]]
                         (if (>= 1 (:life trace))
