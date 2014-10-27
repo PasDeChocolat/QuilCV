@@ -31,7 +31,7 @@
   (assoc-in state [:motion-seeds]
             (reduce (fn [memo {:keys [x y] :as seed}]
                       (let [x (+ (- (rand 20) 10) x)
-                            y (+ 10 y)]
+                            y (+ (+ (rand 5) 5) y)]
                         (if (< (+ display-height SEED-W) y)
                           memo
                           (conj memo (-> seed
