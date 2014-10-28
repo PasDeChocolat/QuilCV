@@ -82,6 +82,7 @@
     :previous-color-record {}
     :motion-trace {}
     :motion-seeds []
+    :coral-size (coral/coral-size DISPLAY-WIDTH DISPLAY-HEIGHT)
     :coral {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
