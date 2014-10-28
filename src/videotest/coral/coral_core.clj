@@ -80,7 +80,8 @@
     :color-record {}
     :previous-color-record {}
     :motion-trace {}
-    :motion-seeds []}))
+    :motion-seeds []
+    :coral {}}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
@@ -141,7 +142,7 @@
        (overlay-triangles)
        (mtrace/update-motion-trace)
        (mtrace/overlay-motion-trace)
-       (mseeds/update-motion-seeds DISPLAY-BIN-SIZE DISPLAY-HEIGHT)
+       (mseeds/update-motion-seeds DISPLAY-BIN-SIZE DISPLAY-WIDTH DISPLAY-HEIGHT)
        (update-drawn-p-image)
        (update-previous-color-record)))
 

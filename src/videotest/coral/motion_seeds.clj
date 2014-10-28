@@ -35,13 +35,18 @@
                     motion-seeds
                     motion-trace)))
 
-(defn move-motion-seeds [display-height {:keys [motion-seeds] :as state}]
+(defn out-of-bounds? [seed-w display-w display-h x y]
+  (or (< (+ display-h seed-w) y)
+      (> 0 (+ seed-w) x)
+      (< display-w (- x seed-w))))
+
+(defn move-motion-seeds [display-w display-h {:keys [motion-seeds] :as state}]
   (assoc-in state [:motion-seeds]
             (reduce (fn [memo {:keys [x y] :as seed}]
                       (let [p-noise (pnoise/xy->perlin x y)
                             x (+ (pnoise/perlin->range p-noise (- SEED-X-VEL-BOUND) SEED-X-VEL-BOUND) x)
                             y (+ (pnoise/perlin->range p-noise SEED-Y-VEL-BOUND-MIN SEED-Y-VEL-BOUND-MAX) y)]
-                        (if (< (+ display-height SEED-W) y)
+                        (if (out-of-bounds? SEED-W display-w display-h x y)
                           memo
                           (conj memo (-> seed
                                          (assoc-in [:p-noise] p-noise)
@@ -50,10 +55,10 @@
                     []
                     motion-seeds)))
 
-(defn update-motion-seeds [bin-size display-height state]
+(defn update-motion-seeds [bin-size display-w display-h state]
   (->> state
        (create-motion-seeds bin-size)
-       (move-motion-seeds display-height)))
+       (move-motion-seeds display-w display-h)))
 
 (defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise x y color]
   (let [alpha (pnoise/perlin->range p-noise 100.0 200.0)
