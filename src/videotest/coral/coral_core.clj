@@ -4,6 +4,7 @@
    [quil.core :as q]
    [quil.middleware :as m]
    [videotest.coral.color :as color]
+   [videotest.coral.coral :as coral]
    [videotest.coral.cv :as cv]
    [videotest.coral.cv-draw :as cv-draw]
    [videotest.coral.hex :as hex]
@@ -143,6 +144,7 @@
        (mtrace/update-motion-trace)
        (mtrace/overlay-motion-trace)
        (mseeds/update-motion-seeds DISPLAY-BIN-SIZE DISPLAY-WIDTH DISPLAY-HEIGHT)
+       (coral/attach-seeds DISPLAY-HEIGHT)
        (update-drawn-p-image)
        (update-previous-color-record)))
 
