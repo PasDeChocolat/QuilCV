@@ -10,6 +10,11 @@
 (def SEED-W 10)
 (def SEED-CREATE-ODDS 0.1)
 
+(def SEED-X-VEL-BOUND 20.0)
+(def SEED-Y-VEL-BOUND-MIN 5.0)
+(def SEED-Y-VEL-BOUND-MAX 20.0)
+
+
 (defn seed-created? []
   (> SEED-CREATE-ODDS (rand)))
 
@@ -34,8 +39,8 @@
   (assoc-in state [:motion-seeds]
             (reduce (fn [memo {:keys [x y] :as seed}]
                       (let [p-noise (pnoise/xy->perlin x y)
-                            x (+ (pnoise/perlin->range p-noise -10 10.0) x)
-                            y (+ (pnoise/perlin->range p-noise 5.0 10.0) y)]
+                            x (+ (pnoise/perlin->range p-noise (- SEED-X-VEL-BOUND) SEED-X-VEL-BOUND) x)
+                            y (+ (pnoise/perlin->range p-noise SEED-Y-VEL-BOUND-MIN SEED-Y-VEL-BOUND-MAX) y)]
                         (if (< (+ display-height SEED-W) y)
                           memo
                           (conj memo (-> seed
