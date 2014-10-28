@@ -31,10 +31,13 @@
   state)
 
 (defn draw [state]
-  (q/background 255)
+  (q/background 0)
   (q/push-matrix)
   (q/translate DISPLAY-WIDTH 0)
   (q/scale -1 1)
+  (q/no-fill)
+  (q/stroke-weight 1)
+  (q/stroke 0 255 255 255)
   (hex/draw-hex-grid DISPLAY-BIN-SIZE HEX-W state)
   (q/pop-matrix))
 

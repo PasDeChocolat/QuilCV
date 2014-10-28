@@ -14,41 +14,35 @@
   (* (Math/sin (Math/toRadians 60))
      hex-w))
 
-(defn draw-hex-cell [col row w half-w hex-w half-hex-w y-offset]
-  (q/push-matrix)
+(defn draw-hex
+  "Draws a hexagon, centered at x, y."
+  [hex-w half-hex-w y-offset x y]
+  (q/with-translation [x y]
+    (q/begin-shape)
+    (q/vertex (- hex-w) 0)
+    (q/vertex (- half-hex-w) (- y-offset))
+    (q/vertex half-hex-w (- y-offset))
+    (q/vertex hex-w 0)
+    (q/vertex half-hex-w y-offset)
+    (q/vertex (- half-hex-w) y-offset)
+    (q/vertex (- hex-w) 0)
+    (q/end-shape)))
+
+(defn draw-hex-cell [w half-w hex-w half-hex-w y-offset col row]
   (let [x (+ (* col w) half-w)
         y (+ (* row w) half-w)
         y (if (odd? col)
             (+ y half-w)
             y)]
-    (q/with-translation [x y]
-      (q/begin-shape)
-      (q/vertex (- hex-w) 0)
-      (q/vertex (- half-hex-w) (- y-offset))
-      (q/vertex half-hex-w (- y-offset))
-      (q/vertex hex-w 0)
-      (q/vertex half-hex-w y-offset)
-      (q/vertex (- half-hex-w) y-offset)
-      (q/vertex (- hex-w) 0)
-      (q/end-shape)))
-  (q/pop-matrix))
+    (draw-hex hex-w half-hex-w y-offset x y)))
 
 (defn draw-hex-grid [bin-size hex-w {:keys [grid-coords]}]
-  (q/push-matrix)
-  (q/push-style)
-  (q/rect-mode :center)
-  (q/ellipse-mode :center)
-  (q/no-fill)
-  (q/stroke-weight 1)
   (let [half-bin-size (/ bin-size 2.0)
         half-hex-w (/ hex-w 2.0)
-        y-offset (hex-y-offset hex-w)]
+        y-offset (hex-y-offset hex-w)
+        draw (partial draw-hex-cell
+                      bin-size half-bin-size hex-w half-hex-w y-offset)]
     (dorun
      (map (fn [[col row]]
-            (do
-              (q/stroke 0 255 255 100)
-              (q/stroke 0 255 0 255)
-              (draw-hex-cell col row bin-size half-bin-size hex-w half-hex-w y-offset)))
-          grid-coords)))
-  (q/pop-style)
-  (q/pop-matrix))
+            (draw col row))
+          grid-coords))))
