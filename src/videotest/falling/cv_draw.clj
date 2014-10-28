@@ -8,9 +8,11 @@
   "Draw a filled polygon with the given points and color."
   [img-mat color glyph-pts]
   (let [poly (MatOfPoint.)
-        c (apply (fn [r g b a]
-                   (Scalar. r g b a))
-                 color)]
+        c (if (> 4 (count color))
+            (Scalar. 0 0 0 255)
+            (apply (fn [r g b a]
+                          (Scalar. r g b a))
+                        color))]
     (.fromList poly (ArrayList. glyph-pts))
     (Core/fillPoly img-mat (ArrayList. [poly]) c)))
 
