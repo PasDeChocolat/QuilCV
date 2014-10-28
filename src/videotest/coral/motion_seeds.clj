@@ -41,19 +41,27 @@
       (< display-w (- x seed-w))))
 
 (defn move-motion-seeds [display-w display-h {:keys [motion-seeds] :as state}]
-  (assoc-in state [:motion-seeds]
-            (reduce (fn [memo {:keys [x y] :as seed}]
-                      (let [p-noise (pnoise/xy->perlin x y)
-                            x (+ (pnoise/perlin->range p-noise (- SEED-X-VEL-BOUND) SEED-X-VEL-BOUND) x)
-                            y (+ (pnoise/perlin->range p-noise SEED-Y-VEL-BOUND-MIN SEED-Y-VEL-BOUND-MAX) y)]
-                        (if (out-of-bounds? SEED-W display-w display-h x y)
-                          memo
-                          (conj memo (-> seed
-                                         (assoc-in [:p-noise] p-noise)
-                                         (assoc-in [:x] x)
-                                         (assoc-in [:y] y))))))
-                    []
-                    motion-seeds)))
+  (let [reduce-seed
+        (fn [memo {:keys [x y] :as seed}]
+          (let [p-noise (pnoise/xy->perlin x y)
+                x (+ x
+                     (pnoise/perlin->range p-noise
+                                           (- SEED-X-VEL-BOUND)
+                                           SEED-X-VEL-BOUND))
+                y (+ y
+                     (pnoise/perlin->range p-noise
+                                           SEED-Y-VEL-BOUND-MIN
+                                           SEED-Y-VEL-BOUND-MAX))]
+            (if (out-of-bounds? SEED-W display-w display-h x y)
+              memo
+              (conj memo (-> seed
+                             (assoc-in [:p-noise] p-noise)
+                             (assoc-in [:x] x)
+                             (assoc-in [:y] y))))))]
+    (assoc-in state [:motion-seeds]
+              (reduce reduce-seed
+               []
+               motion-seeds))))
 
 (defn update-motion-seeds [bin-size display-w display-h state]
   (->> state
