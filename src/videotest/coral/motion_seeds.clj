@@ -3,10 +3,11 @@
    [quil.core :as q]
    [videotest.coral.color :as color]
    [videotest.coral.hex :as hex]
-   [videotest.coral.motion-trace :as mtrace]))
+   [videotest.coral.motion-trace :as mtrace]
+   [videotest.coral.noise :as pnoise]))
 
 
-(def SEED-W 20)
+(def SEED-W 10)
 (def SEED-CREATE-ODDS 0.1)
 
 (defn seed-created? []
@@ -32,11 +33,13 @@
 (defn move-motion-seeds [display-height {:keys [motion-seeds] :as state}]
   (assoc-in state [:motion-seeds]
             (reduce (fn [memo {:keys [x y] :as seed}]
-                      (let [x (+ (- (rand 20) 10) x)
-                            y (+ (+ (rand 5) 5) y)]
+                      (let [p-noise (pnoise/xy->perlin x y)
+                            x (+ (pnoise/perlin->range p-noise -10 10.0) x)
+                            y (+ (pnoise/perlin->range p-noise 5.0 10.0) y)]
                         (if (< (+ display-height SEED-W) y)
                           memo
                           (conj memo (-> seed
+                                         (assoc-in [:p-noise] p-noise)
                                          (assoc-in [:x] x)
                                          (assoc-in [:y] y))))))
                     []
@@ -47,22 +50,24 @@
        (create-motion-seeds bin-size)
        (move-motion-seeds display-height)))
 
-(defn draw-hex-motion-seed [hex-w half-hex-w y-offset x y color]
-  (let [alpha (* (q/noise (* 0.01 x) (* 0.01 y)) (last color))
+(defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise x y color]
+  (let [alpha (pnoise/perlin->range p-noise 100.0 200.0)
         c (color/color-with-alpha color alpha)]
-    (apply q/fill c))
-  (hex/draw-hex hex-w half-hex-w y-offset x y))
+    (apply q/fill c)
+    (q/with-translation [x y]
+      (q/with-rotation [(* p-noise Math/PI)]
+        (hex/draw-hex-at-origin hex-w half-hex-w y-offset)))))
 
 (defn draw-motion-seeds [{:keys [motion-seeds]}]
-  (q/push-style)
-  (q/no-stroke)
-  (let [hex-w SEED-W
-        half-hex-w (/ hex-w 2.0)
-        y-offset (hex/hex-y-offset hex-w)
-        draw (partial draw-hex-motion-seed
-                      hex-w half-hex-w y-offset)]
-   (dorun
-    (map (fn [{:keys [x y color]}]
-           (draw x y color))
-         motion-seeds)))
-  (q/pop-style))
+    (q/push-style)
+    (q/no-stroke)
+    (let [hex-w SEED-W
+          half-hex-w (/ hex-w 2.0)
+          y-offset (hex/hex-y-offset hex-w)
+          draw (partial draw-hex-motion-seed
+                        hex-w half-hex-w y-offset)]
+      (dorun
+       (map (fn [{:keys [p-noise x y color]}]
+              (draw p-noise x y color))
+            motion-seeds)))
+    (q/pop-style))

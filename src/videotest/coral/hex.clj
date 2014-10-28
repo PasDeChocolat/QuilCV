@@ -14,19 +14,24 @@
   (* (Math/sin (Math/toRadians 60))
      hex-w))
 
+(defn draw-hex-at-origin
+  "Draws a hexagon, centered at x, y."
+  [hex-w half-hex-w y-offset]
+  (q/begin-shape)
+  (q/vertex (- hex-w) 0)
+  (q/vertex (- half-hex-w) (- y-offset))
+  (q/vertex half-hex-w (- y-offset))
+  (q/vertex hex-w 0)
+  (q/vertex half-hex-w y-offset)
+  (q/vertex (- half-hex-w) y-offset)
+  (q/vertex (- hex-w) 0)
+  (q/end-shape))
+
 (defn draw-hex
   "Draws a hexagon, centered at x, y."
   [hex-w half-hex-w y-offset x y]
   (q/with-translation [x y]
-    (q/begin-shape)
-    (q/vertex (- hex-w) 0)
-    (q/vertex (- half-hex-w) (- y-offset))
-    (q/vertex half-hex-w (- y-offset))
-    (q/vertex hex-w 0)
-    (q/vertex half-hex-w y-offset)
-    (q/vertex (- half-hex-w) y-offset)
-    (q/vertex (- hex-w) 0)
-    (q/end-shape)))
+    (draw-hex-at-origin hex-w half-hex-w y-offset)))
 
 (defn draw-hex-cell [w half-w hex-w half-hex-w y-offset col row]
   (let [x (+ (* col w) half-w)
