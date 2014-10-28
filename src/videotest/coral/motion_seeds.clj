@@ -60,8 +60,8 @@
                              (assoc-in [:y] y))))))]
     (assoc-in state [:motion-seeds]
               (reduce reduce-seed
-               []
-               motion-seeds))))
+                      []
+                      motion-seeds))))
 
 (defn update-motion-seeds [bin-size display-w display-h state]
   (->> state
