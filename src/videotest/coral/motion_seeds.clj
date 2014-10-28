@@ -47,10 +47,6 @@
        (create-motion-seeds bin-size)
        (move-motion-seeds display-height)))
 
-(defn draw-motion-seed [x y color]
-  (apply q/fill color)
-  (q/ellipse x y SEED-W SEED-W))
-
 (defn draw-hex-motion-seed [hex-w half-hex-w y-offset x y color]
   (let [alpha (* (q/noise (* 0.01 x) (* 0.01 y)) (last color))
         c (color/color-with-alpha color alpha)]
