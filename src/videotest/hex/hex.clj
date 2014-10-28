@@ -1,8 +1,6 @@
 (ns videotest.hex.hex
   (:require
-   [quil.applet :as qa :refer [applet-close]]
-   [quil.core :as q]
-   [quil.middleware :as m]))
+   [quil.core :as q]))
 
 
 (defn grid-coords [col-bins row-bins]
