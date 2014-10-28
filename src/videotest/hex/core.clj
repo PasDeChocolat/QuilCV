@@ -2,7 +2,8 @@
   (:require
    [quil.applet :as qa :refer [applet-close]]
    [quil.core :as q]
-   [quil.middleware :as m]))
+   [quil.middleware :as m]
+   [videotest.hex.hex :as hex]))
 
 ;; Optoma Projector
 ;; (def DISPLAY-WIDTH 1280.0)
@@ -23,95 +24,19 @@
 (def HEX-W 10.0)
 (def HEX-W-2 (/ HEX-W 2.0))
 
-(defn grid-coords [col-bins row-bins]
-  (doall
-   (vec
-    (for [row (range 0 row-bins)
-          col (range 0 col-bins)]
-      [col row]))))
-
-(defn draw-cell [col row w half-w]
-  (q/push-style)
-  (when (= 5 col row)
-    (q/fill 255 0 0 100)
-    (q/stroke 255 0 0))
-  (let [x (+ (* col w) half-w)
-        y (+ (* row w) half-w)
-        y (if (odd? col)
-            (+ y half-w)
-            y)]
-    (q/rect x y w w))
-  (q/pop-style))
-
-(defn draw-hex-cell-dot [col row w half-w]
-  (q/push-matrix)
-  (let [x (+ (* col w) half-w)
-        y (+ (* row w) half-w)
-        y (if (odd? col)
-            (+ y half-w)
-            y)]
-    (q/with-translation [x y]
-      (q/ellipse 0 0 half-w half-w)))
-  (q/pop-matrix))
-
-(defn hex-y-offset [hex-w]
-  (* (Math/sin (Math/toRadians 60))
-     hex-w))
-
-(defn draw-hex-cell [col row w half-w hex-w half-hex-w y-offset]
-  (q/push-matrix)
-  (let [x (+ (* col w) half-w)
-        y (+ (* row w) half-w)
-        y (if (odd? col)
-            (+ y half-w)
-            y)]
-    (q/with-translation [x y]
-      (q/begin-shape)
-      (q/vertex (- hex-w) 0)
-      (q/vertex (- half-hex-w) (- y-offset))
-      (q/vertex half-hex-w (- y-offset))
-      (q/vertex hex-w 0)
-      (q/vertex half-hex-w y-offset)
-      (q/vertex (- half-hex-w) y-offset)
-      (q/vertex (- hex-w) 0)
-      (q/end-shape)))
-  (q/pop-matrix))
-
-(defn draw-hex-grid [{:keys [grid-coords]}]
-  (q/push-matrix)
-  (q/push-style)
-  (q/rect-mode :center)
-  (q/ellipse-mode :center)
-  (q/no-fill)
-  (q/stroke-weight 1)
-  (let [y-offset (hex-y-offset HEX-W)]
-   (dorun
-    (map (fn [[col row]]
-           (do
-             (q/stroke 0 255 255 100)
-             #_(draw-cell         col row DISPLAY-BIN-SIZE DISPLAY-BIN-SIZE-2)
-             #_(draw-hex-cell-dot col row DISPLAY-BIN-SIZE DISPLAY-BIN-SIZE-2)
-             (q/stroke 0 255 0 255)
-             (draw-hex-cell col row DISPLAY-BIN-SIZE DISPLAY-BIN-SIZE-2 HEX-W HEX-W-2 y-offset)))
-         grid-coords)))
-  (q/pop-style)
-  (q/pop-matrix))
-
 (defn setup []
-  {:grid-coords (grid-coords NUM-COL-BINS NUM-ROW-BINS)
-   :hex-cells {}})
+  {:grid-coords (grid-coords NUM-COL-BINS NUM-ROW-BINS)})
 
 (defn update [state]
   state)
 
 (defn draw [state]
-  (let [x 1]
-    (q/background 255)
-    (q/push-matrix)
-    (q/translate DISPLAY-WIDTH 0)
-    (q/scale -1 1)
-    (draw-hex-grid state)
-    (q/pop-matrix)))
+  (q/background 255)
+  (q/push-matrix)
+  (q/translate DISPLAY-WIDTH 0)
+  (q/scale -1 1)
+  (hex/draw-hex-grid DISPLAY-BIN-SIZE HEX-W state)
+  (q/pop-matrix))
 
 (defn on-close [state]
   )
