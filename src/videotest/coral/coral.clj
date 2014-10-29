@@ -62,6 +62,7 @@
 (defn is-attaching? [num-rows cell-w coral x y]
   (let [[col row :as coords] (xy->coords cell-w x y)]
     (and (not (is-occupied? coral coords))
+         (not (is-occupied? coral [col (dec row)]))
          (or (and (is-bottom? num-rows row)
                   (> BOTTOM-ATTACH-PCT (rand)))
              (is-row-under-occupied? coral coords))
