@@ -15,6 +15,8 @@
 (def NUM-CORAL-COL-BINS 110.0)
 (def HEX-W 7.6)
 
+(def CORAL-ROT-CYCLE 120)
+
 (defn coral-size [display-w display-h]
   (let [col-bins NUM-CORAL-COL-BINS
         cell-w (/ display-w col-bins)
@@ -26,7 +28,11 @@
      :cell-half-w (/ cell-w 2.0)
      :hex-w hex-w
      :hex-half-w (/ hex-w 2.0)
-     :hex-y-offset (hex/hex-y-offset hex-w)}))
+     :hex-y-offset (hex/hex-y-offset hex-w)
+     :rot-cycle-length CORAL-ROT-CYCLE
+     :rot-cycle 0
+     :rot-cycle2 0
+     :odd-col-lower true}))
 
 (defn x->col [cell-w x]
   (int (/ x cell-w)))
@@ -48,17 +54,22 @@
 (defn is-occupied? [coral coords]
   (contains? coral coords))
 
-(defn occupied-coral-under [coral [col row]]
-  (let [row-under (inc row)
-        under-coords (if (even? col)
-                       [[(dec col) row]
-                        [     col  row-under]
-                        [(inc col) row]]
-                       [[(dec col) row-under]
-                        [     col  row-under]
-                        [(inc col) row-under]])
-        ]
-    (filter #(is-occupied? coral %) under-coords)))
+(defn occupied-coral-under
+  ([coral [col row :as coords]]
+     (occupied-coral-under true coral coords))
+  ([odd-col-lower coral [col row]]
+     (let [row-under (inc row)
+           under-coords (if (or
+                             (and odd-col-lower (even? col))
+                             (and (not odd-col-lower) (odd? col)))
+                          [[(dec col) row]
+                           [     col  row-under]
+                           [(inc col) row]]
+                          [[(dec col) row-under]
+                           [     col  row-under]
+                           [(inc col) row-under]])
+           ]
+       (filter #(is-occupied? coral %) under-coords))))
 
 (defn is-row-under-occupied? [coral [col row]]
   (seq (occupied-coral-under coral [col row])))
@@ -69,9 +80,9 @@
 ;; 21.25 = 30 degrees (on 0-255 scale)
 (def HUE-DIFF-CLIQUEY-THRESH-MAX 21.25)
 
-(defn is-cliquey? [coral coords this-hue]
+(defn is-cliquey? [odd-col-lower coral coords this-hue]
   (if-let [occupied-under (seq
-                           (occupied-coral-under coral coords))]
+                           (occupied-coral-under odd-col-lower coral coords))]
     (let [sum-hue (reduce (fn [memo under-coords]
                             (let [{:keys [color-hsva]} (coral under-coords)]
                               (+ memo (first color-hsva))))
@@ -85,14 +96,15 @@
                            1.0 0.0) (rand))))
     false))
 
-(defn is-attaching? [num-rows cell-w coral
+(defn is-attaching? [coral coral-size
                      {:keys [x y color-hsva] :as seed}]
-  (let [[col row :as coords] (xy->coords cell-w x y)]
+  (let [{:keys [num-row-bins cell-w odd-col-lower]} coral-size
+        [col row :as coords] (xy->coords cell-w x y)]
     (and (not (is-occupied? coral coords))
          (not (is-occupied? coral [col (dec row)]))
-         (or (and (is-bottom? num-rows row)
+         (or (and (is-bottom? num-row-bins row)
                   (> BOTTOM-ATTACH-PCT (rand)))
-             (is-cliquey? coral coords (first color-hsva)))
+             (is-cliquey? odd-col-lower coral coords (first color-hsva)))
     )))
 
 (defn remove-seeds [all-seeds seeds]
@@ -115,28 +127,44 @@
 
 (defn attach-seeds
   [display-h {:keys [motion-seeds coral-size coral] :as state}]
-  (let [{:keys [num-row-bins cell-w]} coral-size
+  (let [{:keys [cell-w]} coral-size
         attaching (filter (fn [seed]
-                            (is-attaching? num-row-bins cell-w coral seed))
+                            (is-attaching? coral coral-size seed))
                           motion-seeds)]
     (-> state
         (update-in [:motion-seeds] #(remove-seeds % attaching))
         (update-in [:coral] #(add-seeds-to-coral cell-w % attaching)))))
 
-(def CORAL-ROT-CYCLE 120)
+(defn rotate-coral-side [{:keys [coral-size] :as state}]
+  (let [{:keys [rot-cycle]} coral-size]
+    (if (= 0 rot-cycle)
+      (update-in state [:coral]
+                 #(reduce (fn [memo [[col row :as coords]
+                                    polyp]]
+                            (if (< col 1)
+                              memo
+                              (let [new-coords [(dec col) row]]
+                                (assoc-in memo [new-coords] polyp))))
+                          {}
+                          %))
+      state)))
+
+(defn update-rot-cycle [{:keys [coral-size] :as state}]
+  (let [{:keys [rot-cycle-length]} coral-size
+        frame-count (q/frame-count)
+        rot-cycle   (mod frame-count rot-cycle-length)
+        rot-cycle2 (mod frame-count (* 2 rot-cycle-length))]
+   (update-in state [:coral-size]
+              #(-> %
+                   (assoc-in [:rot-cycle] rot-cycle)
+                   (assoc-in [:rot-cycle2] rot-cycle2)
+                   (assoc-in [:odd-col-lower]
+                             (>= rot-cycle2 rot-cycle-length))))))
 
 (defn rotate-coral [state]
-  (if (= 0 (mod (q/frame-count) CORAL-ROT-CYCLE))
-    (update-in state [:coral]
-              #(reduce (fn [memo [[col row :as coords]
-                                 polyp]]
-                         (if (< col 1)
-                           memo
-                           (let [new-coords [(dec col) row]]
-                             (assoc-in memo [new-coords] polyp))))
-                       {}
-                       %))
-    state))
+  (-> state
+      (update-rot-cycle)
+      (rotate-coral-side)))
 
 (defn draw-polyp [odd-col-lower
                   {:keys [cell-w cell-half-w
@@ -157,12 +185,9 @@
   (q/no-fill)
   (q/stroke-weight 4.0)
   #_(q/stroke 255)
-  (let [cell-w (:cell-w coral-size)
-        cycle (mod (q/frame-count) CORAL-ROT-CYCLE)
-        x-offset (* (/ cell-w (float CORAL-ROT-CYCLE))
-                    (float cycle))
-        cycle2 (mod (q/frame-count) (* 2 CORAL-ROT-CYCLE))
-        odd-col-lower (>= cycle2 CORAL-ROT-CYCLE)]
+  (let [{:keys [cell-w rot-cycle-length rot-cycle odd-col-lower]} coral-size
+        x-offset (* (/ cell-w (float rot-cycle-length))
+                    (float rot-cycle))]
     (q/with-translation [(- x-offset) 0]
       (dorun
        (map (partial draw-polyp odd-col-lower coral-size)
