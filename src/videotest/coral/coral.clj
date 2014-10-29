@@ -42,20 +42,22 @@
 (defn is-bottom? [num-rows row]
   (<= (dec num-rows) row))
 
-(defn is-occupied? [x y]
-  )
+(defn is-occupied? [coral coords]
+  (contains? coral coords))
 
 (defn bumping-coral? []
   )
 
 (def BOTTOM-ATTACH-PCT 0.1)
 
-(defn is-attaching? [num-rows cell-w x y]
-  (cond
-   (is-bottom? num-rows (y->row cell-w y))
-   (> BOTTOM-ATTACH-PCT (rand))
+(defn is-attaching? [num-rows cell-w coral x y]
+  (let [[col row :as coords] (xy->coords cell-w x y)]
+   (cond
+    (is-bottom? num-rows row)
+    (and (not (is-occupied? coral coords))
+         (> BOTTOM-ATTACH-PCT (rand)))
    
-   :default false))
+    :default false)))
 
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
@@ -76,10 +78,10 @@
            seeds)))
 
 (defn attach-seeds
-  [display-h {:keys [motion-seeds coral-size] :as state}]
+  [display-h {:keys [motion-seeds coral-size coral] :as state}]
   (let [{:keys [num-row-bins cell-w]} coral-size
         attaching (filter (fn [{:keys [x y] :as seed}]
-                            (is-attaching? num-row-bins cell-w x y))
+                            (is-attaching? num-row-bins cell-w coral x y))
                           motion-seeds)]
     (-> state
         (update-in [:motion-seeds] #(remove-seeds % attaching))
