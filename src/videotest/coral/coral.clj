@@ -48,8 +48,14 @@
 (defn bumping-coral? []
   )
 
+(def BOTTOM-ATTACH-PCT 0.1)
+
 (defn is-attaching? [num-rows cell-w x y]
-  (is-bottom? num-rows (y->row cell-w y)))
+  (cond
+   (is-bottom? num-rows (y->row cell-w y))
+   (> BOTTOM-ATTACH-PCT (rand))
+   
+   :default false))
 
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
