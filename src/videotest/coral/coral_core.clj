@@ -158,6 +158,7 @@
     (when p-image
       (q/image p-image 0 0))
     (mseeds/draw-motion-seeds state)
+    (coral/draw-coral state)
     (q/pop-matrix)))
 
 (defn on-close

@@ -1,5 +1,6 @@
 (ns videotest.coral.coral
   (:require
+   [quil.core :as q]
    [videotest.coral.hex :as hex]))
 
 
@@ -53,14 +54,44 @@
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
 
-(defn add-coral [coral x y]
-  ())
+(defn init-polyp [])
+
+(defn add-polyp [cell-w coral x y]
+  (let [[col row :as coords] (xy->coords cell-w x y)]
+    (-> coral
+        (assoc-in [coords] {:color [0 255 255 100]}))))
+
+(defn add-seeds-to-coral [cell-w coral seeds]
+  (doall
+   (reduce (fn [memo {:keys [x y] :as seed}]
+             (add-polyp cell-w memo x y))
+           coral
+           seeds)))
 
 (defn attach-seeds
-  [display-h {:keys [motion-seeds coral coral-size] :as state}]
+  [display-h {:keys [motion-seeds coral-size] :as state}]
   (let [{:keys [num-row-bins cell-w]} coral-size
         attaching (filter (fn [{:keys [x y] :as seed}]
                             (is-attaching? num-row-bins cell-w x y))
                           motion-seeds)]
     (-> state
-        (update-in [:motion-seeds] #(remove-seeds % attaching)))))
+        (update-in [:motion-seeds] #(remove-seeds % attaching))
+        (update-in [:coral] #(add-seeds-to-coral cell-w  % attaching)))))
+
+(defn draw-polyp [{:keys [cell-w cell-half-w
+                          hex-w hex-half-w
+                          hex-y-offset] :as coral-size}
+                  [[col row :as coords]
+                   {:keys [color] :as polyp}]]
+  (apply q/fill color)
+  (hex/draw-hex-cell cell-w cell-half-w
+                     hex-w hex-half-w
+                     hex-y-offset
+                     col (- row 1)))
+
+(defn draw-coral [{:keys [coral-size coral]}]
+  (q/push-style)
+  (dorun
+   (map (partial draw-polyp coral-size)
+        coral))
+  (q/pop-style))
