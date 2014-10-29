@@ -9,8 +9,10 @@
 ;; - run into existing coral,
 ;; - 
 
-(def NUM-CORAL-COL-BINS 64.0)
-(def HEX-W 10.0)
+;; (def NUM-CORAL-COL-BINS 64.0)
+;; (def HEX-W 10.0)
+(def NUM-CORAL-COL-BINS 110.0)
+(def HEX-W 7.6)
 
 (defn coral-size [display-w display-h]
   (let [col-bins NUM-CORAL-COL-BINS
