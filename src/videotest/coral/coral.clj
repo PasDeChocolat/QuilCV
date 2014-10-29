@@ -58,21 +58,39 @@
   ([coral [col row :as coords]]
      (occupied-coral-under true coral coords))
   ([odd-col-lower coral [col row]]
-     (let [row-under (inc row)
+     (let [row-plus (inc row)
            under-coords (if (or
                              (and odd-col-lower (even? col))
                              (and (not odd-col-lower) (odd? col)))
                           [[(dec col) row]
-                           [     col  row-under]
+                           [     col  row-plus]
                            [(inc col) row]]
-                          [[(dec col) row-under]
-                           [     col  row-under]
-                           [(inc col) row-under]])
-           ]
+                          [[(dec col) row-plus]
+                           [     col  row-plus]
+                           [(inc col) row-plus]])]
        (filter #(is-occupied? coral %) under-coords))))
 
-(defn is-row-under-occupied? [coral [col row]]
+(defn occupied-coral-above
+  ([coral [col row :as coords]]
+     (occupied-coral-above true coral coords))
+  ([odd-col-lower coral [col row]]
+     (let [row-minus (dec row)
+           other-coords (if (or
+                             (and odd-col-lower (even? col))
+                             (and (not odd-col-lower) (odd? col)))
+                          [[(dec col) row-minus]
+                           [     col  row-minus]
+                           [(inc col) row-minus]]
+                          [[(dec col) row]
+                           [     col  row-minus]
+                           [(inc col) row]])]
+       (filter #(is-occupied? coral %) other-coords))))
+
+#_(defn is-row-under-occupied? [coral [col row]]
   (seq (occupied-coral-under coral [col row])))
+
+(defn is-leaf? [odd-col-lower coral [col row :as coords]]
+  (not (seq (occupied-coral-above odd-col-lower coral coords))))
 
 (def BOTTOM-ATTACH-PCT 0.1)
 
@@ -166,13 +184,17 @@
       (update-rot-cycle)
       (rotate-coral-side)))
 
-(defn draw-polyp [odd-col-lower
+(defn draw-polyp [coral
                   {:keys [cell-w cell-half-w
                           hex-w hex-half-w
-                          hex-y-offset] :as coral-size}
+                          hex-y-offset
+                          odd-col-lower] :as coral-size}
                   [[col row :as coords]
                    {:keys [color-rgba] :as polyp}]]
   #_(apply q/fill color-rgba)
+  (if (is-leaf? odd-col-lower coral coords)
+    (q/fill 50 255 0 155)
+    (q/no-fill))
   (apply q/stroke color-rgba)
   (hex/draw-hex-cell odd-col-lower
                      cell-w cell-half-w
@@ -190,6 +212,6 @@
                     (float rot-cycle))]
     (q/with-translation [(- x-offset) 0]
       (dorun
-       (map (partial draw-polyp odd-col-lower coral-size)
+       (map (partial draw-polyp coral coral-size)
             coral))))
   (q/pop-style))
