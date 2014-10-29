@@ -60,12 +60,13 @@
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
 
-(defn init-polyp [])
+(defn init-polyp [color]
+  {:color color})
 
 (defn add-polyp [cell-w coral x y color]
   (let [[col row :as coords] (xy->coords cell-w x y)]
     (-> coral
-        (assoc-in [coords] {:color color}))))
+        (assoc-in [coords] (init-polyp color)))))
 
 (defn add-seeds-to-coral [cell-w coral seeds]
   (doall
