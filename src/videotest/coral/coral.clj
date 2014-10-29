@@ -123,6 +123,19 @@
         (update-in [:motion-seeds] #(remove-seeds % attaching))
         (update-in [:coral] #(add-seeds-to-coral cell-w % attaching)))))
 
+(defn rotate-coral [state]
+  (if (= 0 (mod (q/frame-count) 60))
+    (update-in state [:coral]
+              #(reduce (fn [memo [[col row :as coords]
+                                 polyp]]
+                         (if (< col 1)
+                           memo
+                           (let [new-coords [(dec col) row]]
+                             (assoc-in memo [new-coords] polyp))))
+                       {}
+                       %))
+    state))
+
 (defn draw-polyp [{:keys [cell-w cell-half-w
                           hex-w hex-half-w
                           hex-y-offset] :as coral-size}
