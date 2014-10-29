@@ -47,27 +47,51 @@
 (defn is-occupied? [coral coords]
   (contains? coral coords))
 
+(defn occupied-coral-under [coral [col row]]
+  (let [row-under (inc row)
+        under-coords (if (even? col)
+                       [[(dec col) row]
+                        [     col  row-under]
+                        [(inc col) row]]
+                       [[(dec col) row-under]
+                        [     col  row-under]
+                        [(inc col) row-under]])
+        ]
+    (filter #(is-occupied? coral %) under-coords)))
+
 (defn is-row-under-occupied? [coral [col row]]
-  (let [row-under (inc row)]
-   (or
-    (and (even? col)
-         (some #(is-occupied? coral %) [[(dec col) row]
-                                        [     col  row-under]
-                                        [(inc col) row]]))
-    (and (odd? col)
-         (some #(is-occupied? coral %) [[(dec col) row-under]
-                                        [     col  row-under]
-                                        [(inc col) row-under]])))))
+  (seq (occupied-coral-under coral [col row])))
 
 (def BOTTOM-ATTACH-PCT 0.1)
 
-(defn is-attaching? [num-rows cell-w coral x y]
+;; 127.5 = 180 degress (max on 0-255 scale)
+;; 21.25 = 30 degrees (on 0-255 scale)
+(def HUE-DIFF-CLIQUEY-THRESH-MAX 21.25)
+
+(defn is-cliquey? [coral coords this-hue]
+  (if-let [occupied-under (seq
+                           (occupied-coral-under coral coords))]
+    (let [sum-hue (reduce (fn [memo under-coords]
+                            (let [{:keys [color-hsva]} (coral under-coords)]
+                              (+ memo (first color-hsva))))
+                          0
+                          occupied-under)
+          avg-hue (/ sum-hue (count occupied-under))
+          diff (color/hue-diff avg-hue this-hue)]
+      (and (< diff HUE-DIFF-CLIQUEY-THRESH-MAX) 
+           (> (q/map-range diff
+                           0 HUE-DIFF-CLIQUEY-THRESH-MAX
+                           1.0 0.0) (rand))))
+    false))
+
+(defn is-attaching? [num-rows cell-w coral
+                     {:keys [x y color-hsva] :as seed}]
   (let [[col row :as coords] (xy->coords cell-w x y)]
     (and (not (is-occupied? coral coords))
          (not (is-occupied? coral [col (dec row)]))
          (or (and (is-bottom? num-rows row)
                   (> BOTTOM-ATTACH-PCT (rand)))
-             (is-row-under-occupied? coral coords))
+             (is-cliquey? coral coords (first color-hsva)))
     )))
 
 (defn remove-seeds [all-seeds seeds]
@@ -91,8 +115,8 @@
 (defn attach-seeds
   [display-h {:keys [motion-seeds coral-size coral] :as state}]
   (let [{:keys [num-row-bins cell-w]} coral-size
-        attaching (filter (fn [{:keys [x y] :as seed}]
-                            (is-attaching? num-row-bins cell-w coral x y))
+        attaching (filter (fn [seed]
+                            (is-attaching? num-row-bins cell-w coral seed))
                           motion-seeds)]
     (-> state
         (update-in [:motion-seeds] #(remove-seeds % attaching))
@@ -111,6 +135,8 @@
 
 (defn draw-coral [{:keys [coral-size coral]}]
   (q/push-style)
+  (q/stroke-weight 1.0)
+  (q/stroke 255)
   (dorun
    (map (partial draw-polyp coral-size)
         coral))

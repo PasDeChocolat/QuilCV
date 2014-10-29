@@ -36,3 +36,7 @@
      (rgba->hsva (single-three-dim-color-mat)
                  (single-three-dim-color-mat)
                  rgba)))
+
+(defn hue-diff [h1 h2]
+  (mod (math/abs (- h1 h2))
+       127.5))
