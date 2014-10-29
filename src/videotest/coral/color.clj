@@ -1,6 +1,9 @@
 (ns videotest.coral.color
   (:require
-   [clojure.math.numeric-tower :as math]))
+   [clojure.math.numeric-tower :as math])
+  (:import
+   [org.opencv.core CvType Mat]
+   [org.opencv.imgproc Imgproc]))
 
 (defn color-with-alpha [c alpha]
   (conj (vec (take 3 c)) alpha))
@@ -12,3 +15,24 @@
                        current-color previous-color)
           channel-change-big-enough? #(< 50 %)]
       (some channel-change-big-enough? changes))))
+
+(defn single-three-dim-color-mat []
+  (Mat. 1 1 CvType/CV_8UC3))
+
+(defn mat-single-rgb [mat r g b]
+  (.put mat 0 0 (double-array [r g b]))
+  mat)
+
+(defn rgba->hsva
+  ([in-mat out-mat rgba]
+     (let [[r g b :as rgb] (take 3 rgba)
+           alpha (or (last rgba) 255)]
+       (.put in-mat 0 0 (double-array rgb))
+       (Imgproc/cvtColor in-mat out-mat Imgproc/COLOR_RGB2HSV)
+       (conj
+        (vec (.get out-mat 0 0))
+        alpha)))
+  ([rgba]
+     (rgba->hsva (single-three-dim-color-mat)
+                 (single-three-dim-color-mat)
+                 rgba)))

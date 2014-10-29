@@ -1,6 +1,7 @@
 (ns videotest.coral.coral
   (:require
    [quil.core :as q]
+   [videotest.coral.color :as color]
    [videotest.coral.hex :as hex]))
 
 
@@ -73,20 +74,23 @@
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
 
-(defn init-polyp [color]
-  {:color color})
 
-(defn add-polyp [cell-w coral x y color]
-  (let [[col row :as coords] (xy->coords cell-w x y)]
-    (-> coral
-        (assoc-in [coords] (init-polyp color)))))
+(defn add-polyp [rgb-in-mat hsv-out-mat cell-w coral x y color]
+  (let [[col row :as coords] (xy->coords cell-w x y)
+        hsva (color/rgba->hsva rgb-in-mat hsv-out-mat color)]
+    (assoc-in coral [coords] {:color-rgba color
+                              :color-hsva hsva})))
 
 (defn add-seeds-to-coral [cell-w coral seeds]
-  (doall
-   (reduce (fn [memo {:keys [x y color] :as seed}]
-             (add-polyp cell-w memo x y color))
-           coral
-           seeds)))
+  (let [rgb-in-mat (color/single-three-dim-color-mat)
+        hsv-out-mat (color/single-three-dim-color-mat)]
+   (doall
+    (reduce (fn [memo {:keys [x y color] :as seed}]
+              (add-polyp rgb-in-mat hsv-out-mat
+                         cell-w memo
+                         x y color))
+            coral
+            seeds))))
 
 (defn attach-seeds
   [display-h {:keys [motion-seeds coral-size coral] :as state}]
@@ -102,8 +106,8 @@
                           hex-w hex-half-w
                           hex-y-offset] :as coral-size}
                   [[col row :as coords]
-                   {:keys [color] :as polyp}]]
-  (apply q/fill color)
+                   {:keys [color-rgba] :as polyp}]]
+  (apply q/fill color-rgba)
   (hex/draw-hex-cell cell-w cell-half-w
                      hex-w hex-half-w
                      hex-y-offset
