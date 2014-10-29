@@ -18,22 +18,26 @@
 (defn seed-created? []
   (> SEED-CREATE-ODDS (rand)))
 
-(defn init-motion-seed [x y color]
-  {:x x :y y :color color})
+(defn init-motion-seed [rgb-in-mat hsv-out-mat x y rgba]
+  (let [hsva (color/rgba->hsva rgb-in-mat hsv-out-mat rgba)]
+    {:x x :y y :color-rgba rgba :color-hsva hsva}))
 
 (defn create-motion-seeds [bin-size {:keys [motion-trace motion-seeds color-record] :as state}]
-  (assoc-in state [:motion-seeds]
-            (reduce (fn [memo [[col row :as coords] {:keys [life]}]]
-                      (if (and (<= mtrace/MAX-TRACE-LIFE life)
-                               (seed-created?))
-                        (conj memo (init-motion-seed (+ (* col bin-size)
-                                                        (rand bin-size))
-                                                     (+ (* row bin-size)
-                                                        (rand bin-size))
-                                                     (color-record coords)))
-                        memo))
-                    motion-seeds
-                    motion-trace)))
+  (let [rgb-in-mat (color/single-three-dim-color-mat)
+        hsv-out-mat (color/single-three-dim-color-mat)]
+    (assoc-in state [:motion-seeds]
+           (reduce (fn [memo [[col row :as coords] {:keys [life]}]]
+                     (if (and (<= mtrace/MAX-TRACE-LIFE life)
+                              (seed-created?))
+                       (conj memo (init-motion-seed rgb-in-mat hsv-out-mat
+                                                    (+ (* col bin-size)
+                                                       (rand bin-size))
+                                                    (+ (* row bin-size)
+                                                       (rand bin-size))
+                                                    (color-record coords)))
+                       memo))
+                   motion-seeds
+                   motion-trace))))
 
 (defn out-of-bounds? [seed-w display-w display-h x y]
   (or (< (+ display-h seed-w) y)
@@ -68,9 +72,9 @@
        (create-motion-seeds bin-size)
        (move-motion-seeds display-w display-h)))
 
-(defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise x y color]
+(defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise x y color-rgba]
   (let [alpha (pnoise/perlin->range p-noise 50.0 150.0)
-        c (color/color-with-alpha color alpha)]
+        c (color/color-with-alpha color-rgba alpha)]
     (apply q/fill c)
     (q/with-translation [x y]
       (q/with-rotation [(* p-noise Math/PI)]
@@ -85,7 +89,7 @@
           draw (partial draw-hex-motion-seed
                         hex-w half-hex-w y-offset)]
       (dorun
-       (map (fn [{:keys [p-noise x y color]}]
-              (draw p-noise x y color))
+       (map (fn [{:keys [p-noise x y color-rgba]}]
+              (draw p-noise x y color-rgba))
             motion-seeds)))
     (q/pop-style))
