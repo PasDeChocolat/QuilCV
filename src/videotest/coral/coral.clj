@@ -128,7 +128,8 @@
                           hex-y-offset] :as coral-size}
                   [[col row :as coords]
                    {:keys [color-rgba] :as polyp}]]
-  (apply q/fill color-rgba)
+  #_(apply q/fill color-rgba)
+  (apply q/stroke color-rgba)
   (hex/draw-hex-cell cell-w cell-half-w
                      hex-w hex-half-w
                      hex-y-offset
@@ -136,8 +137,9 @@
 
 (defn draw-coral [{:keys [coral-size coral]}]
   (q/push-style)
-  (q/stroke-weight 1.0)
-  (q/stroke 255)
+  (q/no-fill)
+  (q/stroke-weight 4.0)
+  #_(q/stroke 255)
   (dorun
    (map (partial draw-polyp coral-size)
         coral))
