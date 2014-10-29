@@ -62,15 +62,15 @@
 
 (defn init-polyp [])
 
-(defn add-polyp [cell-w coral x y]
+(defn add-polyp [cell-w coral x y color]
   (let [[col row :as coords] (xy->coords cell-w x y)]
     (-> coral
-        (assoc-in [coords] {:color [0 255 255 100]}))))
+        (assoc-in [coords] {:color color}))))
 
 (defn add-seeds-to-coral [cell-w coral seeds]
   (doall
-   (reduce (fn [memo {:keys [x y] :as seed}]
-             (add-polyp cell-w memo x y))
+   (reduce (fn [memo {:keys [x y color] :as seed}]
+             (add-polyp cell-w memo x y color))
            coral
            seeds)))
 
@@ -82,7 +82,7 @@
                           motion-seeds)]
     (-> state
         (update-in [:motion-seeds] #(remove-seeds % attaching))
-        (update-in [:coral] #(add-seeds-to-coral cell-w  % attaching)))))
+        (update-in [:coral] #(add-seeds-to-coral cell-w % attaching)))))
 
 (defn draw-polyp [{:keys [cell-w cell-half-w
                           hex-w hex-half-w
