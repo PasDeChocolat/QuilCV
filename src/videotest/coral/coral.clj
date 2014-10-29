@@ -123,8 +123,10 @@
         (update-in [:motion-seeds] #(remove-seeds % attaching))
         (update-in [:coral] #(add-seeds-to-coral cell-w % attaching)))))
 
+(def CORAL-ROT-CYCLE 120)
+
 (defn rotate-coral [state]
-  (if (= 0 (mod (q/frame-count) 60))
+  (if (= 0 (mod (q/frame-count) CORAL-ROT-CYCLE))
     (update-in state [:coral]
               #(reduce (fn [memo [[col row :as coords]
                                  polyp]]
@@ -136,14 +138,16 @@
                        %))
     state))
 
-(defn draw-polyp [{:keys [cell-w cell-half-w
+(defn draw-polyp [odd-col-lower
+                  {:keys [cell-w cell-half-w
                           hex-w hex-half-w
                           hex-y-offset] :as coral-size}
                   [[col row :as coords]
                    {:keys [color-rgba] :as polyp}]]
   #_(apply q/fill color-rgba)
   (apply q/stroke color-rgba)
-  (hex/draw-hex-cell cell-w cell-half-w
+  (hex/draw-hex-cell odd-col-lower
+                     cell-w cell-half-w
                      hex-w hex-half-w
                      hex-y-offset
                      col (- row 1)))
@@ -153,7 +157,14 @@
   (q/no-fill)
   (q/stroke-weight 4.0)
   #_(q/stroke 255)
-  (dorun
-   (map (partial draw-polyp coral-size)
-        coral))
+  (let [cell-w (:cell-w coral-size)
+        cycle (mod (q/frame-count) CORAL-ROT-CYCLE)
+        x-offset (* (/ cell-w (float CORAL-ROT-CYCLE))
+                    (float cycle))
+        cycle2 (mod (q/frame-count) (* 2 CORAL-ROT-CYCLE))
+        odd-col-lower (>= cycle2 CORAL-ROT-CYCLE)]
+    (q/with-translation [(- x-offset) 0]
+      (dorun
+       (map (partial draw-polyp odd-col-lower coral-size)
+            coral))))
   (q/pop-style))

@@ -33,13 +33,23 @@
   (q/with-translation [x y]
     (draw-hex-at-origin hex-w half-hex-w y-offset)))
 
-(defn draw-hex-cell [w half-w hex-w half-hex-w y-offset col row]
-  (let [x (+ (* col w) half-w)
-        y (+ (* row w) half-w)
-        y (if (odd? col)
-            (+ y half-w)
-            y)]
-    (draw-hex hex-w half-hex-w y-offset x y)))
+(defn draw-hex-cell
+  ([w half-w hex-w half-hex-w y-offset col row]
+     (draw-hex-cell true
+                    w half-w hex-w half-hex-w y-offset col row))
+  ([odd-col-lower
+    w half-w hex-w half-hex-w y-offset col row]
+     (let [x (+ (* col w) half-w)
+           y (+ (* row w) half-w)
+           y (cond
+              (and odd-col-lower (odd? col))
+              (+ y half-w)
+              
+              (and (not odd-col-lower) (even? col))
+              (+ y half-w)
+              
+              :default y)]
+       (draw-hex hex-w half-hex-w y-offset x y))))
 
 (defn draw-hex-grid [bin-size hex-w {:keys [grid-coords]}]
   (let [half-bin-size (/ bin-size 2.0)
