@@ -45,19 +45,27 @@
 (defn is-occupied? [coral coords]
   (contains? coral coords))
 
-(defn bumping-coral? []
-  )
+(defn is-row-under-occupied? [coral [col row]]
+  (let [row-under (inc row)]
+   (or
+    (and (even? col)
+         (some #(is-occupied? coral %) [[(dec col) row]
+                                        [     col  row-under]
+                                        [(inc col) row]]))
+    (and (odd? col)
+         (some #(is-occupied? coral %) [[(dec col) row-under]
+                                        [     col  row-under]
+                                        [(inc col) row-under]])))))
 
 (def BOTTOM-ATTACH-PCT 0.1)
 
 (defn is-attaching? [num-rows cell-w coral x y]
   (let [[col row :as coords] (xy->coords cell-w x y)]
-   (cond
-    (is-bottom? num-rows row)
     (and (not (is-occupied? coral coords))
-         (> BOTTOM-ATTACH-PCT (rand)))
-   
-    :default false)))
+         (or (and (is-bottom? num-rows row)
+                  (> BOTTOM-ATTACH-PCT (rand)))
+             (is-row-under-occupied? coral coords))
+    )))
 
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
