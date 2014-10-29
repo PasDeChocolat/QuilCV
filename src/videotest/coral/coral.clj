@@ -1,6 +1,7 @@
 (ns videotest.coral.coral
   (:require
    [quil.core :as q]
+   [videotest.coral.color :as color]
    [videotest.coral.hex :as hex]))
 
 
