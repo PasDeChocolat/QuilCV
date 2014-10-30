@@ -5,11 +5,6 @@
    [videotest.coral.hex :as hex]))
 
 
-;; Should have a chance to attach, when:
-;; - at bottom,
-;; - run into existing coral,
-;; - 
-
 ;; (def NUM-CORAL-COL-BINS 64.0)
 ;; (def HEX-W 10.0)
 (def NUM-CORAL-COL-BINS 110.0)
