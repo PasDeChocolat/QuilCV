@@ -149,6 +149,7 @@
        (mtrace/overlay-motion-trace)
        (mseeds/update-motion-seeds DISPLAY-BIN-SIZE DISPLAY-WIDTH DISPLAY-HEIGHT)
        (coral/attach-seeds DISPLAY-HEIGHT)
+       (coral/decay-coral)
        (coral/rotate-coral)
        (update-drawn-p-image)
        (update-previous-color-record)))

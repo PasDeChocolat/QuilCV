@@ -190,7 +190,26 @@
 ;;  Decay of Coral
 ;; ----------------------------------
 
+(def LEAF-DECAY-PCT-MIN 0.0)
+(def LEAF-DECAY-PCT-MAX 0.03)
 
+(defn remove-coral [dead-coords coral]
+  (apply dissoc coral dead-coords))
+
+(defn decay-coral [{:keys [coral coral-size] :as state}]
+  (let [{:keys [odd-col-lower]} coral-size
+        all-coords (keys coral)
+        leaf-nodes (filter (fn [coords]
+                             (is-leaf? odd-col-lower coral coords))
+                           all-coords)
+        num-coral (count all-coords)
+        _ (println "There are" num-coral "pieces of coral. Have a nice day.")
+        decay-pct (q/map-range num-coral 0 1000
+                               LEAF-DECAY-PCT-MIN LEAF-DECAY-PCT-MAX)
+        dead (filter (fn [leaf-node]
+                        (> decay-pct (rand)))
+                      leaf-nodes)]
+    (update-in state [:coral] #(apply dissoc % dead))))
 
 
 ;; ----------------------------------

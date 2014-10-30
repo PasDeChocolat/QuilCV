@@ -8,7 +8,8 @@
 
 
 (def SEED-W 10)
-(def SEED-CREATE-ODDS 0.1)
+;; (def SEED-CREATE-ODDS 0.1)
+(def SEED-CREATE-ODDS 0.2)
 
 (def SEED-X-VEL-BOUND 20.0)
 (def SEED-Y-VEL-BOUND-MIN 5.0)
