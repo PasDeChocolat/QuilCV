@@ -15,6 +15,7 @@
    [org.opencv.core Core CvType Mat MatOfKeyPoint Point Size]
    [org.opencv.features2d FeatureDetector KeyPoint]
    [org.opencv.imgproc Imgproc]
+   [java.awt Color]
    [java.nio ByteBuffer ByteOrder]))
 
 (def CAM-DEV-NUM 0)
@@ -183,6 +184,8 @@
   :on-close on-close
   :middleware [m/fun-mode])
 
-(.setResizable (.frame videotest) true)
+(def frame (.frame videotest))
+(.setResizable frame true)
+(.setBackground (.getContentPane frame) Color/black)
 (defn close [] (applet-close videotest))
 (def x close)
