@@ -126,11 +126,13 @@
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
 
+(defn make-sound-for-polyp-creation? [seed-count]
+  (> (q/map-range seed-count 1 1000 1.0 0.01) (rand)))
 
 (defn add-polyp [coral-size seed-count coral x y color-rgba color-hsva]
   (let [{:keys [cell-w num-row-bins]} coral-size
         [col row :as coords] (xy->coords cell-w x y)]
-    (if (> (q/map-range seed-count 1 1000 1.0 0.01) (rand))
+    (if (make-sound-for-polyp-creation? seed-count)
       (sound/polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
                             (q/map-range row 0 num-row-bins 0.0 1.0)))
     (assoc-in coral [coords] {:color-rgba color-rgba
