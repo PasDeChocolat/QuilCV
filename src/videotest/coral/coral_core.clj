@@ -17,7 +17,7 @@
    [org.opencv.imgproc Imgproc]
    [java.nio ByteBuffer ByteOrder]))
 
-(def CAM-DEV-NUM 0)
+(def CAM-DEV-NUM 1)
 (def CAM-SIZE (cv/camera-frame-size CAM-DEV-NUM))
 (def CAM-WIDTH  (int (:width  CAM-SIZE)))
 (def CAM-HEIGHT (int (:height CAM-SIZE)))
@@ -25,10 +25,13 @@
 ;; Optoma Projector
 ;; (def DISPLAY-WIDTH 1280.0)
 ;; (def DISPLAY-HEIGHT 800.0)
+(def DISPLAY-WIDTH 1280.0)
+(def DISPLAY-HEIGHT 720.0)
+
 
 ;; Lenovo
-(def DISPLAY-WIDTH 1366.0)
-(def DISPLAY-HEIGHT 768.0)
+;; (def DISPLAY-WIDTH 1366.0)
+;; (def DISPLAY-HEIGHT 768.0)
 
 ;; pixCnt1 is the number of bytes in the pixel buffer
 ;; pixCnt2 is the number of integers in the PImage pixels buffer
@@ -169,7 +172,7 @@
        (.release camera))))
 
 (q/defsketch videotest
-  :title "x"
+  :title ""
   :size [DISPLAY-WIDTH DISPLAY-HEIGHT]
   :setup setup
   :update update
