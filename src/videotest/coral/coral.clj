@@ -150,6 +150,10 @@
         (update-in [:motion-seeds] #(remove-seeds % attaching))
         (update-in [:coral] #(add-seeds-to-coral cell-w % attaching)))))
 
+
+;; ----------------------------------
+;;  Rotation of coral (move to side)
+;; ----------------------------------
 (defn rotate-coral-side [{:keys [coral-size] :as state}]
   (let [{:keys [rot-cycle]} coral-size]
     (if (= 0 rot-cycle)
@@ -181,6 +185,17 @@
       (update-rot-cycle)
       (rotate-coral-side)))
 
+
+;; ----------------------------------
+;;  Decay of Coral
+;; ----------------------------------
+
+
+
+
+;; ----------------------------------
+;;  Draw Coral
+;; ----------------------------------
 (defn draw-polyp [coral
                   {:keys [cell-w cell-half-w
                           hex-w hex-half-w
