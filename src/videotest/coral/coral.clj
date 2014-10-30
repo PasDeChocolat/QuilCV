@@ -126,29 +126,36 @@
 (defn remove-seeds [all-seeds seeds]
   (remove (set seeds) all-seeds))
 
-(defn make-sound-for-polyp-creation? [seed-count]
-  (> (q/map-range seed-count 1 1000 1.0 0.01) (rand)))
+(defn play-polyp-creation [cell-w num-row-bins seeds]
+  (when (seq seeds)
+    (let [avg-y (/ (reduce (fn [memo {:keys [x y]}]
+                             (+ memo y))
+                           0
+                           seeds)
+                   (count seeds))
+          [_ row] (xy->coords cell-w 0 avg-y)]
+      (sound/polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
+                            (q/map-range row 0 num-row-bins 0.0 1.0)))))
 
 (defn add-polyp [coral-size seed-count coral x y color-rgba color-hsva]
   (let [{:keys [cell-w num-row-bins]} coral-size
         [col row :as coords] (xy->coords cell-w x y)]
-    (if (make-sound-for-polyp-creation? seed-count)
-      (sound/polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
-                            (q/map-range row 0 num-row-bins 0.0 1.0)))
     (assoc-in coral [coords] {:color-rgba color-rgba
                               :color-hsva color-hsva})))
 
 (defn add-seeds-to-coral [coral-size coral seeds]
-  (let [seed-count (count seeds)]
-   (doall
-    (reduce (fn [memo {:keys [x y color-rgba color-hsva] :as seed}]
-              (add-polyp coral-size
-                         seed-count
-                         memo
-                         x y
-                         color-rgba color-hsva))
-            coral
-            seeds))))
+  (let [{:keys [cell-w num-row-bins]} coral-size
+        seed-count (count seeds)]
+    (play-polyp-creation cell-w num-row-bins seeds)
+    (doall
+     (reduce (fn [memo {:keys [x y color-rgba color-hsva] :as seed}]
+               (add-polyp coral-size
+                          seed-count
+                          memo
+                          x y
+                          color-rgba color-hsva))
+             coral
+             seeds))))
 
 (defn attach-seeds
   [display-h {:keys [motion-seeds coral-size coral] :as state}]
