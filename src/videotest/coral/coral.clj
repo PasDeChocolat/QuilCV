@@ -13,7 +13,8 @@
 ;; (def NUM-CORAL-COL-BINS 64.0)
 ;; (def HEX-W 10.0)
 (def NUM-CORAL-COL-BINS 110.0)
-(def HEX-W 7.6)
+(def HEX-W 10.6)
+(def CORAL-STROKE-WEIGHT 2.0)
 
 (def CORAL-ROT-CYCLE 120)
 
@@ -205,7 +206,7 @@
 (defn draw-coral [{:keys [coral-size coral]}]
   (q/push-style)
   (q/no-fill)
-  (q/stroke-weight 4.0)
+  (q/stroke-weight CORAL-STROKE-WEIGHT)
   #_(q/stroke 255)
   (let [{:keys [cell-w rot-cycle-length rot-cycle odd-col-lower]} coral-size
         x-offset (* (/ cell-w (float rot-cycle-length))
