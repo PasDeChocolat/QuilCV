@@ -13,6 +13,13 @@
 
 (def CORAL-ROT-CYCLE 120)
 
+(def BOTTOM-ATTACH-PCT 0.1)
+
+;; 127.5 = 180 degress (max on 0-255 scale)
+;; 21.25 = 30 degrees (on 0-255 scale)
+(def HUE-DIFF-CLIQUEY-THRESH-MAX 21.25)
+
+
 (defn coral-size [display-w display-h]
   (let [col-bins NUM-CORAL-COL-BINS
         cell-w (/ display-w col-bins)
@@ -87,12 +94,6 @@
 
 (defn is-leaf? [odd-col-lower coral [col row :as coords]]
   (not (seq (occupied-coral-above odd-col-lower coral coords))))
-
-(def BOTTOM-ATTACH-PCT 0.1)
-
-;; 127.5 = 180 degress (max on 0-255 scale)
-;; 21.25 = 30 degrees (on 0-255 scale)
-(def HUE-DIFF-CLIQUEY-THRESH-MAX 21.25)
 
 (defn is-cliquey? [odd-col-lower coral coords this-hue]
   (if-let [occupied-under (seq
