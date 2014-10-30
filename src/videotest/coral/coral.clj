@@ -202,11 +202,20 @@
 (def LEAF-DECAY-PCT-MIN 0.0)
 (def LEAF-DECAY-PCT-MAX 0.03)
 
-(defn remove-coral [dead-coords coral]
-  (apply dissoc coral dead-coords))
+(defn play-polyp-decay [all-decaying num-rows]
+  (let [avg-row (/ (reduce (fn [memo [col row]]
+                             (+ memo row))
+                           0
+                           all-decaying)
+                   (count all-decaying))
+        rel-amp (q/map-range avg-row 0 num-rows
+                             1.0 0.0)
+        rel-freq (q/map-range avg-row 0 num-rows
+                              1.0 0.0)]
+   (sound/polyp-decay-sound rel-amp rel-freq)))
 
 (defn decay-coral [{:keys [coral coral-size] :as state}]
-  (let [{:keys [odd-col-lower]} coral-size
+  (let [{:keys [odd-col-lower num-row-bins]} coral-size
         all-coords (keys coral)
         leaf-nodes (filter (fn [coords]
                              (is-leaf? odd-col-lower coral coords))
@@ -216,7 +225,9 @@
                                LEAF-DECAY-PCT-MIN LEAF-DECAY-PCT-MAX)
         dead (filter (fn [leaf-node]
                         (> decay-pct (rand)))
-                      leaf-nodes)]
+                     leaf-nodes)]
+    (when (seq dead)
+      (play-polyp-decay dead num-row-bins))
     (update-in state [:coral] #(apply dissoc % dead))))
 
 
