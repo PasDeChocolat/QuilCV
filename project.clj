@@ -11,6 +11,9 @@
                  ;; required by native-vector
                  [org.clojure/math.numeric-tower "0.0.4"]
 
+                 ;; required for Overtone
+                 [overtone "0.9.1"]
+                 
                  ;; YAML for SimpleBlobDetector properties
                  [clj-yaml "0.4.0"]
                  ;; required by fast-vector

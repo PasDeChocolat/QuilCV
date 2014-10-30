@@ -2,7 +2,8 @@
   (:require
    [quil.core :as q]
    [videotest.coral.color :as color]
-   [videotest.coral.hex :as hex]))
+   [videotest.coral.hex :as hex]
+   [videotest.sound.sound :as sound]))
 
 
 ;; (def NUM-CORAL-COL-BINS 64.0)
@@ -126,29 +127,35 @@
   (remove (set seeds) all-seeds))
 
 
-(defn add-polyp [cell-w coral x y color-rgba color-hsva]
-  (let [[col row :as coords] (xy->coords cell-w x y)]
+(defn add-polyp [coral-size seed-count coral x y color-rgba color-hsva]
+  (let [{:keys [cell-w num-row-bins]} coral-size
+        [col row :as coords] (xy->coords cell-w x y)]
+    (if (> (q/map-range seed-count 1 1000 1.0 0.01) (rand))
+      (sound/polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
+                            (q/map-range row 0 num-row-bins 0.0 1.0)))
     (assoc-in coral [coords] {:color-rgba color-rgba
                               :color-hsva color-hsva})))
 
-(defn add-seeds-to-coral [cell-w coral seeds]
-  (doall
-   (reduce (fn [memo {:keys [x y color-rgba color-hsva] :as seed}]
-             (add-polyp cell-w memo
-                        x y
-                        color-rgba color-hsva))
-           coral
-           seeds)))
+(defn add-seeds-to-coral [coral-size coral seeds]
+  (let [seed-count (count seeds)]
+   (doall
+    (reduce (fn [memo {:keys [x y color-rgba color-hsva] :as seed}]
+              (add-polyp coral-size
+                         seed-count
+                         memo
+                         x y
+                         color-rgba color-hsva))
+            coral
+            seeds))))
 
 (defn attach-seeds
   [display-h {:keys [motion-seeds coral-size coral] :as state}]
-  (let [{:keys [cell-w]} coral-size
-        attaching (filter (fn [seed]
+  (let [attaching (filter (fn [seed]
                             (is-attaching? coral coral-size seed))
                           motion-seeds)]
     (-> state
         (update-in [:motion-seeds] #(remove-seeds % attaching))
-        (update-in [:coral] #(add-seeds-to-coral cell-w % attaching)))))
+        (update-in [:coral] #(add-seeds-to-coral coral-size % attaching)))))
 
 
 ;; ----------------------------------
