@@ -13,8 +13,10 @@
 (def SEED-CREATE-ODDS 0.4)
 
 (def SEED-X-VEL-BOUND 20.0)
-(def SEED-Y-VEL-BOUND-MIN 5.0)
-(def SEED-Y-VEL-BOUND-MAX 20.0)
+;; (def SEED-Y-VEL-BOUND-MIN 5.0)
+;; (def SEED-Y-VEL-BOUND-MAX 20.0)
+(def SEED-Y-VEL-BOUND-MIN 2.0)
+(def SEED-Y-VEL-BOUND-MAX 15.0)
 
 
 (defn seed-created? []
@@ -22,7 +24,15 @@
 
 (defn init-motion-seed [rgb-in-mat hsv-out-mat x y rgba]
   (let [hsva (color/rgba->hsva rgb-in-mat hsv-out-mat rgba)]
-    {:x x :y y :color-rgba rgba :color-hsva hsva}))
+    {:x x :y y :color-rgba rgba :color-hsva hsva
+     :velocity [(q/map-range (rand)
+                             0.0 1.0
+                             (- SEED-X-VEL-BOUND)
+                             SEED-X-VEL-BOUND)
+                (q/map-range (rand)
+                             0.0 1.0
+                             SEED-Y-VEL-BOUND-MIN
+                             SEED-Y-VEL-BOUND-MAX)]}))
 
 (defn create-motion-seeds [bin-size {:keys [motion-trace motion-seeds color-record] :as state}]
   (let [rgb-in-mat (color/single-three-dim-color-mat)
@@ -46,24 +56,30 @@
       (> 0 (+ seed-w) x)
       (< display-w (- x seed-w))))
 
+(def SEED-VELOCITY-LERP 0.5)
+
 (defn move-motion-seeds [display-w display-h {:keys [motion-seeds] :as state}]
   (let [reduce-seed
-        (fn [memo {:keys [x y] :as seed}]
+        (fn [memo {:keys [x y velocity] :as seed}]
           (let [p-noise (pnoise/xy->perlin x y)
-                x (+ x
-                     (pnoise/perlin->range p-noise
-                                           (- SEED-X-VEL-BOUND)
-                                           SEED-X-VEL-BOUND))
-                y (+ y
-                     (pnoise/perlin->range p-noise
-                                           SEED-Y-VEL-BOUND-MIN
-                                           SEED-Y-VEL-BOUND-MAX))]
+                [vx vy] velocity
+                target-vx (pnoise/perlin->range p-noise
+                                                (- SEED-X-VEL-BOUND)
+                                                SEED-X-VEL-BOUND)
+                target-vy (pnoise/perlin->range p-noise
+                                                SEED-Y-VEL-BOUND-MIN
+                                                SEED-Y-VEL-BOUND-MAX)
+                lerp-vx (q/lerp vx target-vx SEED-VELOCITY-LERP)
+                lerp-vy (q/lerp vy target-vy SEED-VELOCITY-LERP)
+                x (+ x lerp-vx)
+                y (+ y lerp-vy)]
             (if (out-of-bounds? SEED-W display-w display-h x y)
               memo
               (conj memo (-> seed
                              (assoc-in [:p-noise] p-noise)
                              (assoc-in [:x] x)
-                             (assoc-in [:y] y))))))]
+                             (assoc-in [:y] y)
+                             (assoc-in [:velocity] [lerp-vx lerp-vy]))))))]
     (assoc-in state [:motion-seeds]
               (reduce reduce-seed
                       []
