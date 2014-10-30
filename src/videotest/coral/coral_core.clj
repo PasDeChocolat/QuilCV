@@ -17,7 +17,7 @@
    [org.opencv.imgproc Imgproc]
    [java.nio ByteBuffer ByteOrder]))
 
-(def CAM-DEV-NUM 1)
+(def CAM-DEV-NUM 0)
 (def CAM-SIZE (cv/camera-frame-size CAM-DEV-NUM))
 (def CAM-WIDTH  (int (:width  CAM-SIZE)))
 (def CAM-HEIGHT (int (:height CAM-SIZE)))
@@ -182,3 +182,5 @@
   :middleware [m/fun-mode])
 
 (.setResizable (.frame videotest) true)
+(defn close [] (applet-close videotest))
+(def x close)
