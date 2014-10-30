@@ -203,7 +203,6 @@
                              (is-leaf? odd-col-lower coral coords))
                            all-coords)
         num-coral (count all-coords)
-        _ (println "There are" num-coral "pieces of coral. Have a nice day.")
         decay-pct (q/map-range num-coral 0 1000
                                LEAF-DECAY-PCT-MIN LEAF-DECAY-PCT-MAX)
         dead (filter (fn [leaf-node]
