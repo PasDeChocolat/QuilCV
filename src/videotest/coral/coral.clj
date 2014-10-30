@@ -215,16 +215,21 @@
 ;; ----------------------------------
 ;;  Draw Coral
 ;; ----------------------------------
+(defn leaf-alpha [col row]
+  (let [nz (q/noise col row (* 0.99 (q/frame-count)))]
+    (q/map-range nz 0.0 1.0
+                 50.0 150.0)))
+
 (defn draw-polyp [coral
                   {:keys [cell-w cell-half-w
                           hex-w hex-half-w
                           hex-y-offset
                           odd-col-lower] :as coral-size}
                   [[col row :as coords]
-                   {:keys [color-rgba] :as polyp}]]
+                   {:keys [color-rgba color-hsva] :as polyp}]]
   #_(apply q/fill color-rgba)
   (if (is-leaf? odd-col-lower coral coords)
-    (q/fill 50 255 0 155)
+    (q/fill 255 (leaf-alpha col row))
     (q/no-fill))
   (apply q/stroke color-rgba)
   (hex/draw-hex-cell odd-col-lower
