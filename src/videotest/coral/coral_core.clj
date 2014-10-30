@@ -175,6 +175,8 @@
 (q/defsketch videotest
   :title ""
   :size [DISPLAY-WIDTH DISPLAY-HEIGHT]
+  ;; :size :fullscreen
+  :features [:present]
   :setup setup
   :update update
   :draw draw
