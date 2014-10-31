@@ -134,8 +134,11 @@
                            seeds)
                    (count seeds))
           [_ row] (xy->coords cell-w 0 avg-y)]
-      (sound/polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
-                            (q/map-range row 0 num-row-bins 0.0 1.0)))))
+      (sound/bing-polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
+                                 (q/map-range row 0 num-row-bins 0.0 1.0))
+      #_(sound/drum-polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0))
+      #_(sound/harp-polyp-creation (q/map-range row 0 num-row-bins 0.0 1.0)
+                                 (q/map-range row 0 num-row-bins 0.0 1.0)))))
 
 (defn add-polyp [coral-size seed-count coral x y color-rgba color-hsva]
   (let [{:keys [cell-w num-row-bins]} coral-size

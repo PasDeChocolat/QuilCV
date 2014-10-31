@@ -46,7 +46,7 @@
 (def POLYP-CREATION-SOUND-DUR-MIN 0.1)
 (def POLYP-CREATION-SOUND-DUR-MAX 1.0)
 
-(defn polyp-creation
+(defn harp-polyp-creation
   "Coral polyp creation sounds
   rel-note: Relative note, 0.0 to 1.0
   rel-duration: Relative duration, 0.0 1.0"
@@ -59,6 +59,37 @@
                               POLYP-CREATION-SOUND-DUR-MIN
                               POLYP-CREATION-SOUND-DUR-MAX)]
     (harp note duration)))
+
+(defn drum
+  [freq]
+  (drum/kick :amp 2.0 :freq freq :attack 0.01 :decay 0.5))
+
+(defn bing [amp freq attack decay]
+  (drum/bing :amp amp :freq freq :attack attack :decay decay))
+
+(defn drum-polyp-creation [rel-freq]
+  (let [freq (q/map-range rel-freq 0.0 1.0 300.0 200.0)]
+    (drum freq)))
+
+(defn bing-polyp-creation [rel-amp rel-freq]
+  (let [amp (q/map-range rel-amp 0.0 1.0
+                         0.1 0.5)
+        freq (q/map-range rel-freq 0.0 1.0
+                          700.0 520.0)]
+    (bing amp freq 0.05 0.2)))
+
+(defn polyp-decay-sound
+  ([]
+     (bing 2.0 220.0 0.05 0.2))
+  ([rel-amp rel-freq]
+     (let [amp (q/map-range rel-amp 0.0 1.0
+                            0.5 2.0)
+           freq (q/map-range rel-freq 0.0 1.0
+                             120.0 520.0)
+           attack 0.05
+           decay 0.2]
+       (bing amp freq attack decay))))
+
 
 ;; (defn hit-at-harpsichord
 ;;   [col row depth]
@@ -109,17 +140,3 @@
 ;; (drum/kick :amp 2.0 :freq 200.0 :attack 0.01 :decay 0.5)
 ;; (drum/dance-kick)
 ;; (dorun (map #(at (+ (now) %) (drum/bing :amp 2.0 :freq 180)) [0 200 400 800 200 400 200]))
-(defn bing [amp freq attack decay]
-  (drum/bing :amp amp :freq freq :attack attack :decay decay))
-
-(defn polyp-decay-sound
-  ([]
-     (bing 2.0 220.0 0.05 0.2))
-  ([rel-amp rel-freq]
-     (let [amp (q/map-range rel-amp 0.0 1.0
-                            0.5 2.0)
-           freq (q/map-range rel-freq 0.0 1.0
-                             120.0 520.0)
-           attack 0.05
-           decay 0.2]
-      (bing amp freq attack decay))))
