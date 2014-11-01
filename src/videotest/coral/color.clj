@@ -38,5 +38,9 @@
                  rgba)))
 
 (defn hue-diff [h1 h2]
-  (mod (math/abs (- h1 h2))
-       127.5))
+  #_(mod (math/abs (- h1 h2))
+       127.5)
+  (let [diff1 (math/abs (- h1 h2))
+        diff2 (math/abs (- (+ 360 h1) h2))
+        diff3 (math/abs (- h1 (+ 360 h2)))]
+    (min diff1 diff2 diff3)))

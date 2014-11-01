@@ -97,7 +97,7 @@
        (move-motion-seeds display-w display-h)))
 
 (defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise x y color-rgba]
-  (let [alpha (pnoise/perlin->range p-noise 50.0 150.0)
+  (let [alpha (pnoise/perlin->range p-noise 100.0 200.0)
         c (color/color-with-alpha color-rgba alpha)]
     (apply q/fill c)
     (q/with-translation [x y]

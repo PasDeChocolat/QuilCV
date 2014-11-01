@@ -12,13 +12,15 @@
 (def HEX-W 10.6)
 (def CORAL-STROKE-WEIGHT 2.0)
 
-(def CORAL-ROT-CYCLE 120)
+(def CORAL-ROT-CYCLE 60)
 
 (def BOTTOM-ATTACH-PCT 0.1)
 
 ;; 127.5 = 180 degress (max on 0-255 scale)
 ;; 21.25 = 30 degrees (on 0-255 scale)
-(def HUE-DIFF-CLIQUEY-THRESH-MAX 21.25)
+;; (def HUE-DIFF-CLIQUEY-THRESH-MAX 21.25)
+;; (def HUE-DIFF-CLIQUEY-THRESH-MAX 10.625)
+(def HUE-DIFF-CLIQUEY-THRESH-MAX 5.0)
 
 
 (defn coral-size [display-w display-h]
@@ -109,7 +111,7 @@
       (and (< diff HUE-DIFF-CLIQUEY-THRESH-MAX) 
            (> (q/map-range diff
                            0 HUE-DIFF-CLIQUEY-THRESH-MAX
-                           1.0 0.0) (rand))))
+                           0.8 0.0) (rand))))
     false))
 
 (defn is-attaching? [coral coral-size
