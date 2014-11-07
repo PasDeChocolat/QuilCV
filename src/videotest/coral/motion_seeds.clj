@@ -2,6 +2,7 @@
   (:require
    [quil.core :as q]
    [videotest.coral.color :as color]
+   [videotest.coral.flocking-seeds :as fseed]
    [videotest.coral.hex :as hex]
    [videotest.coral.motion-trace :as mtrace]
    [videotest.coral.noise :as pnoise]))
@@ -34,9 +35,10 @@
 
 (defn init-motion-seed [rgb-in-mat hsv-out-mat x y rgba]
   (let [hsva (color/rgba->hsva rgb-in-mat hsv-out-mat rgba)
+        location [x y]
         velocity (rand-target-velocity)]
-    {:x x :y y :color-rgba rgba :color-hsva hsva
-     :velocity velocity :target-velocity velocity}))
+    (-> (fseed/init-flocking-seed location velocity rgba hsva)
+        (assoc-in [:target-velocity] velocity))))
 
 (defn create-motion-seeds [bin-size {:keys [motion-trace motion-seeds color-record] :as state}]
   (let [rgb-in-mat (color/single-three-dim-color-mat)
@@ -65,9 +67,10 @@
 
 (defn move-motion-seeds [display-w display-h {:keys [motion-seeds] :as state}]
   (let [reduce-seed
-        (fn [memo {:keys [x y velocity target-velocity] :as seed}]
-          (let [p-noise (pnoise/xy->perlin x y)
-                [vx vy] velocity
+        (fn [memo {:keys [target-velocity] :as seed}]
+          (let [[x y] (fseed/loc seed)
+                p-noise (pnoise/xy->perlin x y)
+                [vx vy] (fseed/vel seed)
                 
                 [target-vx target-vy :as target-v]
                 (if (= 0 (mod (q/frame-count) (inc (rand-int 10))))
@@ -82,9 +85,8 @@
               memo
               (conj memo (-> seed
                              (assoc-in [:p-noise] p-noise)
-                             (assoc-in [:x] x)
-                             (assoc-in [:y] y)
-                             (assoc-in [:velocity] [lerp-vx lerp-vy])
+                             (fseed/update-loc x y)
+                             (fseed/update-vel vx vy)
                              (assoc-in [:target-velocity] target-v))))))]
     (assoc-in state [:motion-seeds]
               (reduce reduce-seed
@@ -96,8 +98,9 @@
        (create-motion-seeds bin-size)
        (move-motion-seeds display-w display-h)))
 
-(defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise x y color-rgba]
+(defn draw-hex-motion-seed [hex-w half-hex-w y-offset p-noise location color-rgba]
   (let [alpha (pnoise/perlin->range p-noise 100.0 200.0)
+        [x y] location
         c (color/color-with-alpha color-rgba alpha)]
     (apply q/fill c)
     (q/with-translation [x y]
@@ -113,7 +116,8 @@
           draw (partial draw-hex-motion-seed
                         hex-w half-hex-w y-offset)]
       (dorun
-       (map (fn [{:keys [p-noise x y color-rgba]}]
-              (draw p-noise x y color-rgba))
+       (map (fn [{:keys [p-noise color-rgba] :as seed}]
+              (let [location (fseed/loc seed)]
+                (draw p-noise location color-rgba)))
             motion-seeds)))
     (q/pop-style))

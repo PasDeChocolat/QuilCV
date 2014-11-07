@@ -2,6 +2,7 @@
   (:require
    [quil.core :as q]
    [videotest.coral.color :as color]
+   [videotest.coral.flocking-seeds :as fseed]
    [videotest.coral.hex :as hex]
    [videotest.sound.sound :as sound]))
 
@@ -115,8 +116,9 @@
     false))
 
 (defn is-attaching? [coral coral-size
-                     {:keys [x y color-hsva] :as seed}]
+                     {:keys [color-hsva] :as seed}]
   (let [{:keys [num-row-bins cell-w odd-col-lower]} coral-size
+        [x y] (fseed/loc seed)
         [col row :as coords] (xy->coords cell-w x y)]
     (and (not (is-occupied? coral coords))
          (not (is-occupied? coral [col (dec row)]))
@@ -130,8 +132,9 @@
 
 (defn play-polyp-creation [cell-w num-row-bins seeds]
   (when (seq seeds)
-    (let [avg-y (/ (reduce (fn [memo {:keys [x y]}]
-                             (+ memo y))
+    (let [avg-y (/ (reduce (fn [memo seed]
+                             (let [[_ y] (fseed/loc seed)]
+                               (+ memo y)))
                            0
                            seeds)
                    (count seeds))
@@ -153,12 +156,13 @@
         seed-count (count seeds)]
     (play-polyp-creation cell-w num-row-bins seeds)
     (doall
-     (reduce (fn [memo {:keys [x y color-rgba color-hsva] :as seed}]
-               (add-polyp coral-size
-                          seed-count
-                          memo
-                          x y
-                          color-rgba color-hsva))
+     (reduce (fn [memo {:keys [color-rgba color-hsva] :as seed}]
+               (let [[x y] (fseed/loc seed)]
+                (add-polyp coral-size
+                           seed-count
+                           memo
+                           x y
+                           color-rgba color-hsva)))
              coral
              seeds))))
 
