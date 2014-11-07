@@ -7,6 +7,7 @@
    [videotest.coral.coral :as coral]
    [videotest.coral.cv :as cv]
    [videotest.coral.cv-draw :as cv-draw]
+   [videotest.coral.flock.flock :as flock]
    [videotest.coral.hex :as hex]
    [videotest.coral.motion-seeds :as mseeds]
    [videotest.coral.motion-trace :as mtrace]
@@ -54,6 +55,8 @@
 (defn display->cam [display-x-or-y]
   (* display-x-or-y (/ CAM-WIDTH DISPLAY-WIDTH)))
 
+(def NUM-VEHICLES 100)
+
 
 (defn mat
   ([]
@@ -87,7 +90,8 @@
     :motion-trace {}
     :motion-seeds []
     :coral-size (coral/coral-size DISPLAY-WIDTH DISPLAY-HEIGHT)
-    :coral {}}))
+    :coral {}
+    :vehicles (flock/init-vehicles DISPLAY-WIDTH DISPLAY-HEIGHT NUM-VEHICLES)}))
 
 (defn update-rgba [{:keys [rgba-mat frame-mat] :as state}]
   (assoc-in state [:rgba-mat] (cv/BGR->RGBA! frame-mat rgba-mat)))
@@ -141,22 +145,33 @@
     (update-in state [:p-image] #(cv/mat->p-img drawn-mat output-mat b-array i-array %))))
 
 (defn update [state]
-  (->> state
-       (cv/update-frame)
-       (update-rgba)
-       (update-color-record)
-       (overlay-triangles)
-       (mtrace/update-motion-trace)
-       (mtrace/overlay-motion-trace)
-       (mseeds/update-motion-seeds DISPLAY-BIN-SIZE DISPLAY-WIDTH DISPLAY-HEIGHT)
-       (coral/attach-seeds DISPLAY-HEIGHT)
-       (coral/decay-coral)
-       (coral/rotate-coral)
-       (update-drawn-p-image)
-       (update-previous-color-record)))
+  (let [upd-vehicles (partial flock/update-vehicles DISPLAY-WIDTH DISPLAY-HEIGHT)]
+    (->> state
+         (cv/update-frame)
+         (update-rgba)
+         (update-color-record)
+         (overlay-triangles)
+         (mtrace/update-motion-trace)
+         (mtrace/overlay-motion-trace)
+         (mseeds/update-motion-seeds DISPLAY-BIN-SIZE
+                                     DISPLAY-WIDTH DISPLAY-HEIGHT)
+         (coral/attach-seeds DISPLAY-HEIGHT)
+         (coral/decay-coral)
+         (coral/rotate-coral)
+         (update-drawn-p-image)
+         (update-previous-color-record)
+         (upd-vehicles))))
+
+(defn draw-vehicles
+  [vehicles]
+  (q/push-style)
+  (q/fill 0 255 0)
+  (q/no-stroke)
+  (doall (map flock/draw-vehicle vehicles))
+  (q/pop-style))
 
 (defn draw [state]
-  (let [{:keys [p-image frame-mat]} state]
+  (let [{:keys [p-image frame-mat vehicles]} state]
     (q/background 255)
     (q/push-matrix)
     (q/translate DISPLAY-WIDTH 0)
@@ -165,6 +180,7 @@
       (q/image p-image 0 0))
     (mseeds/draw-motion-seeds state)
     (coral/draw-coral state)
+    (draw-vehicles vehicles)
     (q/pop-matrix)))
 
 (defn on-close
