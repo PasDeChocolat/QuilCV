@@ -87,6 +87,7 @@
     :previous-color-record {}
     :motion-trace {}
     :motion-seeds []
+    :seed-locations {}
     :coral-size (coral/coral-size DISPLAY-WIDTH DISPLAY-HEIGHT)
     :coral {}}))
 

@@ -11,7 +11,8 @@
 ;; (def SEED-W 10)
 ;; (def SEED-CREATE-ODDS 0.1)
 (def SEED-W 6)
-(def SEED-CREATE-ODDS 0.4)
+;; (def SEED-CREATE-ODDS 0.4)
+(def SEED-CREATE-ODDS 0.1) ;; slow flocking
 
 (def SEED-X-VEL-BOUND 20.0)
 ;; (def SEED-Y-VEL-BOUND-MIN 5.0)
@@ -67,31 +68,16 @@
 
 (defn move-motion-seeds [display-w display-h {:keys [motion-seeds] :as state}]
   (let [reduce-seed
-        (fn [memo {:keys [target-velocity] :as seed}]
+        (fn [memo seed]
           (let [[x y] (fseed/loc seed)
-                p-noise (pnoise/xy->perlin x y)
-                [vx vy] (fseed/vel seed)
-                
-                [target-vx target-vy :as target-v]
-                (if (= 0 (mod (q/frame-count) (inc (rand-int 10))))
-                  (rand-target-velocity)
-                  target-velocity)
-                
-                lerp-vx (q/lerp vx target-vx SEED-VELOCITY-LERP)
-                lerp-vy (q/lerp vy target-vy SEED-VELOCITY-LERP)
-                x (+ x lerp-vx)
-                y (+ y lerp-vy)]
+                p-noise (pnoise/xy->perlin x y)]
             (if (out-of-bounds? SEED-W display-w display-h x y)
               memo
               (conj memo (-> seed
-                             (assoc-in [:p-noise] p-noise)
-                             (fseed/update-loc x y)
-                             (fseed/update-vel vx vy)
-                             (assoc-in [:target-velocity] target-v))))))]
-    (assoc-in state [:motion-seeds]
-              (reduce reduce-seed
-                      []
-                      motion-seeds))))
+                             (assoc-in [:p-noise] p-noise))))))]
+    (-> state
+        (fseed/update-vehicles display-w display-h)
+        (update-in [:motion-seeds] #(reduce reduce-seed [] %)))))
 
 (defn update-motion-seeds [bin-size display-w display-h state]
   (->> state
