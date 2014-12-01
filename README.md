@@ -14,6 +14,13 @@ Some [Clojure](http://clojure.org) [Quil](https://github.com/quil/quil) + [OpenC
 The demos highlighted here are Quil sketches. Run them as you would any Quil sketch. I prefer to eval the ns in an Emacs Cider REPL.
 
 #### Lucas-Kanade Optical Flow
+
+![Flow Vectors](/path/to/img.jpg "Flow Vectors")
+Optical Flow: Vectors
+
+![Flow Corners](/path/to/img.jpg "Flow Corners")
+Optical Flow: Corners
+
 - [Flow vectors drawn as lines](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/flow_only.clj)
 - [Corners highlighted](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/optical_flow_crit.clj)
 - [Corners highlighted, variable camera size](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/opti_flow_vari_cam.clj)
