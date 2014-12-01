@@ -1,11 +1,28 @@
 QuilCV
 ======
 
-Some Clojure Quil + OpenCV demo projects
+Some [Clojure](http://clojure.org) [Quil](https://github.com/quil/quil) + [OpenCV](http://opencv.org) demo projects
+
+### Prerequisites
+- Working Clojure install
+- Some familiarity with Quil (Clojure's Processing port)
+- Some familiarity / interest in OpenCV
+- OpenCV JARs installed in Maven (see below)
+
+### The Demos
+
+The demos highlighted here are Quil sketches. Run them as you would any Quil sketch. I prefer to eval the ns in an Emacs Cider REPL.
+
+#### Lucas-Kanade Optical Flow
+- [Flow vectors drawn as lines](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/flow_only.clj)
+- [Corners highlighted](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/optical_flow_crit.clj)
+- [Corners highlighted, variable camera size](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/opti_flow_vari_cam.clj)
+- [Larger flow vectors example, used as input to gesture demo](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/basic_mover/core.clj)
+- [Flocking + flow as gestures, with bad performance](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/basic_mover/mover_core.clj)
 
 ### OpenCV Required
 
-Installation tested on Archlinux and OS X. The following is a rough summary of "[Introduction to OpenCV Development with Clojure](http://docs.opencv.org/doc/tutorials/introduction/clojure_dev_intro/clojure_dev_intro.html#clojure-dev-intro)."
+You'll have to build and install the OpenCV JAR files for your setup. Installation tested on Archlinux and OS X. The following is a rough summary of "[Introduction to OpenCV Development with Clojure](http://docs.opencv.org/doc/tutorials/introduction/clojure_dev_intro/clojure_dev_intro.html#clojure-dev-intro)."
 
 Note, at time of writing, the latest version was 2.4.10. So, you may need to replace `2410` in the instructions below with the current version.
 
