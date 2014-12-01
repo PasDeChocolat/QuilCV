@@ -5,7 +5,7 @@ Some [Clojure](http://clojure.org) [Quil](https://github.com/quil/quil) + [OpenC
 
 ### Prerequisites
 - Working Clojure install
-- Some familiarity with Quil (Clojure's Processing port)
+- Some familiarity with Quil (Clojure's [Processing](https://processing.org) port)
 - Some familiarity / interest in OpenCV
 - OpenCV JARs installed in Maven (see below)
 
@@ -13,7 +13,7 @@ Some [Clojure](http://clojure.org) [Quil](https://github.com/quil/quil) + [OpenC
 
 The demos highlighted here are Quil sketches. Run them as you would any Quil sketch. I prefer to eval the ns in an Emacs Cider REPL.
 
-#### Lucas-Kanade Optical Flow
+#### [Lucas-Kanade Optical Flow](http://docs.opencv.org/master/doc/py_tutorials/py_video/py_lucas_kanade/py_lucas_kanade.html)
 
 ![Flow Vectors](https://raw.githubusercontent.com/PasDeChocolat/QuilCV/master/OpticalFlow/LucasKanade/pics/optical-flow-vectors.png "Flow Vectors")
 Optical Flow: Vectors, while moving camera (above)
