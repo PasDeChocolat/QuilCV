@@ -16,10 +16,10 @@ The demos highlighted here are Quil sketches. Run them as you would any Quil ske
 #### Lucas-Kanade Optical Flow
 
 ![Flow Vectors](https://raw.githubusercontent.com/PasDeChocolat/QuilCV/master/OpticalFlow/LucasKanade/pics/optical-flow-vectors.png "Flow Vectors")
-Above: Optical Flow: Vectors
+Optical Flow: Vectors (above)
 
 ![Flow Corners](https://raw.githubusercontent.com/PasDeChocolat/QuilCV/master/OpticalFlow/LucasKanade/pics/optical-flow-corners.png "Flow Corners")
-Above: Optical Flow: Corners
+Optical Flow: Corners (above)
 
 - [Flow vectors drawn as lines](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/flow_only.clj)
 - [Corners highlighted](https://github.com/PasDeChocolat/QuilCV/blob/master/OpticalFlow/LucasKanade/src/videotest/optical_flow_crit.clj)
