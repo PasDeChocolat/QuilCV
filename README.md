@@ -16,7 +16,7 @@ The demos highlighted here are Quil sketches. Run them as you would any Quil ske
 #### Lucas-Kanade Optical Flow
 
 ![Flow Vectors](https://raw.githubusercontent.com/PasDeChocolat/QuilCV/master/OpticalFlow/LucasKanade/pics/optical-flow-vectors.png "Flow Vectors")
-Optical Flow: Vectors (above)
+Optical Flow: Vectors, while moving camera (above)
 
 ![Flow Corners](https://raw.githubusercontent.com/PasDeChocolat/QuilCV/master/OpticalFlow/LucasKanade/pics/optical-flow-corners.png "Flow Corners")
 Optical Flow: Corners (above)
