@@ -49,7 +49,8 @@ Otherwise, install it.
 ```` bash
 brew update
 brew install cmake
-brew python2
+brew install python2
+brew install ant
 ````
 
 If python2 not available, make sure you have Python pointing to Python v2.
@@ -64,6 +65,10 @@ mkdir build
 cd build
 cmake -DBUILD_SHARED_LIBS=OFF ..
 ... output omitted ...
+... make sure that java is on the list of OpenCV modules "to be built"
+... if it isn't on the list, the check for missing Java deps in the
+... same output
+...
 make -j8
 ````
 
